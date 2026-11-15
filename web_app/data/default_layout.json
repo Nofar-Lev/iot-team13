@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "grid": { "columns": 6, "rows": 4 },
+  "screens": [
+    {
+      "background": "soft-hills",
+      "widgets": [
+        { "type": "clock", "size": "4x2", "col": 1, "row": 0,
+          "settings": { "format": "24h", "show_seconds": false, "time_mode": "automatic", "offset_minutes": 0 } },
+        { "type": "date", "size": "2x1", "col": 2, "row": 2,
+          "settings": { "style": "long" } },
+        { "type": "weather", "size": "2x1", "col": 0, "row": 3,
+          "settings": { "city": "Haifa", "units": "celsius" } },
+        { "type": "room_climate", "size": "2x1", "col": 4, "row": 3,
+          "settings": { "units": "celsius" } }
+      ]
+    },
+    {
+      "background": "calm-sea",
+      "widgets": [
+        { "type": "reminders", "size": "4x2", "col": 0, "row": 0,
+          "settings": {} },
+        { "type": "clock", "size": "2x1", "col": 4, "row": 0,
+          "settings": { "format": "24h", "show_seconds": false, "time_mode": "automatic", "offset_minutes": 0 } },
+        { "type": "weather", "size": "2x2", "col": 0, "row": 2,
+          "settings": { "city": "Haifa", "units": "celsius" } },
+        { "type": "stock", "size": "2x1", "col": 2, "row": 2,
+          "settings": { "symbol": "NVDA" } },
+        { "type": "exchange_rate", "size": "2x1", "col": 2, "row": 3,
+          "settings": { "from": "USD", "to": "ILS" } }
+      ]
+    }
+  ]
+}
