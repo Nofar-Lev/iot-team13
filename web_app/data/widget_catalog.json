@@ -1,0 +1,82 @@
+{
+  "grid": { "columns": 6, "rows": 4, "cell_pixels": 80 },
+  "max_screens": 5,
+  "backgrounds": [
+    { "id": "soft-hills",   "name": "Soft hills",   "file": "soft-hills.jpg" },
+    { "id": "night-sky",    "name": "Night sky",    "file": "night-sky.jpg" },
+    { "id": "calm-sea",     "name": "Calm sea",     "file": "calm-sea.jpg" },
+    { "id": "morning-mist", "name": "Morning mist", "file": "morning-mist.jpg" },
+    { "id": "lavender",     "name": "Lavender",     "file": "lavender.jpg" },
+    { "id": "forest",       "name": "Forest",       "file": "forest.jpg" }
+  ],
+  "widgets": [
+    {
+      "type": "clock",
+      "name": "Clock",
+      "sizes": ["2x1", "4x2"],
+      "settings": [
+        { "key": "format", "label": "Hours", "kind": "choice", "default": "24h",
+          "choices": [ { "value": "24h", "label": "24 hours" }, { "value": "12h", "label": "12 hours" } ] },
+        { "key": "show_seconds", "label": "Show seconds", "kind": "toggle", "default": false },
+        { "key": "time_mode", "label": "Time", "kind": "choice", "default": "automatic",
+          "choices": [ { "value": "automatic", "label": "Automatic" }, { "value": "manual", "label": "Set by hand" } ] },
+        { "key": "offset_minutes", "label": "Set the time", "kind": "number", "default": 0,
+          "min": -1440, "max": 1440, "editor": "time_picker",
+          "visible_when": { "time_mode": "manual" } }
+      ]
+    },
+    {
+      "type": "date",
+      "name": "Date",
+      "sizes": ["2x1"],
+      "settings": [
+        { "key": "style", "label": "Form", "kind": "choice", "default": "short",
+          "choices": [ { "value": "short", "label": "Short (Sun 15 Nov)" }, { "value": "long", "label": "Long (Sunday, 15 November)" } ] }
+      ]
+    },
+    {
+      "type": "weather",
+      "name": "Weather",
+      "sizes": ["2x1", "2x2"],
+      "settings": [
+        { "key": "city", "label": "City", "kind": "text", "default": "Haifa", "max_length": 24 },
+        { "key": "units", "label": "Units", "kind": "choice", "default": "celsius",
+          "choices": [ { "value": "celsius", "label": "Celsius" }, { "value": "fahrenheit", "label": "Fahrenheit" } ] }
+      ]
+    },
+    {
+      "type": "stock",
+      "name": "Stock",
+      "sizes": ["2x1"],
+      "settings": [
+        { "key": "symbol", "label": "Symbol", "kind": "text", "default": "NVDA", "max_length": 6, "uppercase": true }
+      ]
+    },
+    {
+      "type": "exchange_rate",
+      "name": "Exchange rate",
+      "sizes": ["2x1"],
+      "settings": [
+        { "key": "from", "label": "From", "kind": "choice", "default": "USD",
+          "choices": [ { "value": "USD", "label": "US dollar" }, { "value": "EUR", "label": "Euro" }, { "value": "GBP", "label": "British pound" } ] },
+        { "key": "to", "label": "To", "kind": "choice", "default": "ILS",
+          "choices": [ { "value": "ILS", "label": "Israeli shekel" }, { "value": "USD", "label": "US dollar" }, { "value": "EUR", "label": "Euro" } ] }
+      ]
+    },
+    {
+      "type": "room_climate",
+      "name": "Room climate",
+      "sizes": ["2x1"],
+      "settings": [
+        { "key": "units", "label": "Units", "kind": "choice", "default": "celsius",
+          "choices": [ { "value": "celsius", "label": "Celsius" }, { "value": "fahrenheit", "label": "Fahrenheit" } ] }
+      ]
+    },
+    {
+      "type": "reminders",
+      "name": "Today's reminders",
+      "sizes": ["4x2"],
+      "settings": []
+    }
+  ]
+}
