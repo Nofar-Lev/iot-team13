@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 WEB_APP_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,7 +14,9 @@ class ServerConfig:
     # phone reach the server. To accept connections from one network only, put the laptop's
     # address on that network here (for example its address on the private network).
     host: str = "0.0.0.0"
-    port: int = 8000
+    # There is no default port, on purpose: the port is chosen every time the server starts
+    # (run_server.py insists on --port), so the server never lands on a port by accident.
+    port: Optional[int] = None
 
     # How often the live channel sends a "nothing happened" message, in seconds. It is what
     # lets a page notice within a few seconds that the server is gone, and the other way round.

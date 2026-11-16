@@ -45,6 +45,7 @@ export function openLiveChannel({ role, onNews, onConnectionChange = () => {} })
   }
 
   function connect() {
+    if (isClosedForGood) return;
     source = new EventSource(`/api/events?role=${encodeURIComponent(role)}`);
     source.onerror = connectionLost;
     for (const name of NEWS_NAMES) {
@@ -55,7 +56,11 @@ export function openLiveChannel({ role, onNews, onConnectionChange = () => {} })
     }
   }
 
-  connect();
+  // The channel is opened only once the page has finished loading. A connection that never
+  // ends, opened while the page is still loading, makes some browsers show the page as
+  // "loading" for as long as it stays open.
+  if (document.readyState === "complete") connect();
+  else window.addEventListener("load", connect, { once: true });
 
   return {
     close() {
