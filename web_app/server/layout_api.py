@@ -1,14 +1,18 @@
-"""The layout addresses: read the saved layout, and save a new one."""
+"""The layout addresses: read the saved layout, and save a new one.
+
+A successful save is announced on the live channel, so the device redraws by itself.
+"""
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
 from .layout_store import LayoutStore
 from .layout_validation import validate_layout
+from .live_updates import LiveUpdates
 from .widget_catalog import WidgetCatalog
 
 
-def create_layout_api(store: LayoutStore, catalog: WidgetCatalog) -> Blueprint:
+def create_layout_api(store: LayoutStore, catalog: WidgetCatalog, live_updates: LiveUpdates) -> Blueprint:
     layout_api = Blueprint("layout_api", __name__)
 
     @layout_api.get("/api/layout")
@@ -26,6 +30,8 @@ def create_layout_api(store: LayoutStore, catalog: WidgetCatalog) -> Blueprint:
             return jsonify({"errors": problems}), 400
 
         saved = store.save(layout)
-        return jsonify({"revision": saved.revision, "saved_at": saved.saved_at})
+        saved_news = {"revision": saved.revision, "saved_at": saved.saved_at}
+        live_updates.announce("layout", saved_news)
+        return jsonify(saved_news)
 
     return layout_api

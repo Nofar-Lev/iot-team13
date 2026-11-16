@@ -15,6 +15,10 @@ class ServerConfig:
     host: str = "0.0.0.0"
     port: int = 8000
 
+    # How often the live channel sends a "nothing happened" message, in seconds. It is what
+    # lets a page notice within a few seconds that the server is gone, and the other way round.
+    heartbeat_seconds: float = 2.0
+
     # Files that ship with the code: the widget catalog, the default layout, the example data.
     data_dir: Path = WEB_APP_DIR / "data"
 
