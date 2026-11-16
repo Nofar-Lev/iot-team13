@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Screen: display editor</title>
+  <link rel="stylesheet" href="/static/css/display.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/editor.css">
+  <script type="module" src="/static/js/editor/editor_main.js"></script>
+</head>
+<body class="editor-page">
+  <header class="top-bar">
+    <a class="top-bar__back" href="/" id="home-link">&lsaquo; Home</a>
+    <h1 class="top-bar__title">Display editor</h1>
+    <span class="unsaved-mark" id="unsaved-mark" hidden>Unsaved changes</span>
+    <div class="top-bar__actions">
+      <button class="button" id="discard-button" type="button" disabled>Discard changes</button>
+      <button class="button button--primary" id="save-button" type="button" disabled>Save</button>
+    </div>
+  </header>
+
+  <main class="editor">
+    <aside class="panel editor__palette">
+      <h2 class="panel__title">Widgets</h2>
+      <p class="panel__hint">Drag a widget onto the display, or click it to add it.</p>
+      <div class="palette" id="widget-palette"></div>
+    </aside>
+
+    <section class="editor__centre">
+      <div class="editor__stage" id="editor-stage"></div>
+      <div class="screens-bar" id="screens-bar"></div>
+    </section>
+
+    <aside class="panel editor__side">
+      <section class="panel__section">
+        <h2 class="panel__title">Widget settings</h2>
+        <div class="settings" id="settings-panel"></div>
+      </section>
+      <section class="panel__section">
+        <h2 class="panel__title">Background of this screen</h2>
+        <div class="background-list" id="background-picker"></div>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>

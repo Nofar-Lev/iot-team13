@@ -1,3 +1,8 @@
+/* How the display and its widgets look.
+   Shared by the editor's preview, the home page's preview and the device page.
+
+   Everything inside .display is measured in the real screen's units: the display is 480x320
+   and a grid cell is 80x80. The frame around it zooms the whole thing as one piece. */
 
 @font-face {
   font-family: "Outfit";
@@ -54,3 +59,274 @@
   height: 100%;
 }
 
+/* --- A widget's box ------------------------------------------------------------------------- */
+
+/* The outer box covers the widget's cells exactly. The body is a little smaller, which leaves
+   a gap between neighbouring widgets. */
+.widget {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 5px;
+}
+
+.widget__body {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* A soft, see-through panel: the background shows through, blurred and slightly darkened, so
+   white text stays readable on every background. */
+.widget__body--card {
+  background: rgba(20, 28, 48, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px) saturate(1.25);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+}
+
+/* Drawn straight on the background, with a faint shadow to lift the text off it. */
+.widget__body--floating {
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+}
+
+.widget__unknown {
+  margin: auto;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* --- Clock ---------------------------------------------------------------------------------- */
+
+.clock {
+  display: flex;
+  align-items: center;
+  margin: auto;
+}
+
+.clock__time {
+  font-weight: 300;
+  line-height: 1;
+}
+
+.clock__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.clock__side[hidden] {
+  display: none;
+}
+
+.clock__seconds {
+  opacity: 0.85;
+}
+
+.widget--4x2 .clock { gap: 8px; }
+.widget--4x2 .clock__time { font-size: 116px; }
+.widget--4x2 .clock--with-side .clock__time { font-size: 100px; }
+.widget--4x2 .clock__side { font-size: 27px; }
+
+.widget--2x1 .clock { gap: 4px; }
+.widget--2x1 .clock__time { font-size: 50px; }
+.widget--2x1 .clock--with-side .clock__time { font-size: 44px; }
+.widget--2x1 .clock__side { font-size: 14px; }
+
+/* --- Date ----------------------------------------------------------------------------------- */
+
+.date {
+  margin: auto;
+  text-align: center;
+  font-weight: 500;
+}
+
+.date--short .date__first-line {
+  font-size: 25px;
+}
+
+.date--long .date__first-line {
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.date--long .date__second-line {
+  margin-top: 4px;
+  font-size: 23px;
+}
+
+/* --- Weather -------------------------------------------------------------------------------- */
+
+.weather {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.weather__city {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather__temperature {
+  line-height: 1;
+}
+
+.weather--2x1 {
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+}
+
+.weather--2x1 .weather__icon { width: 42px; height: 42px; }
+.weather--2x1 .weather__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.weather--2x1 .weather__temperature { font-size: 28px; font-weight: 500; }
+.weather--2x1 .weather__city { font-size: 13px; opacity: 0.88; }
+
+.weather--2x2 {
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px 11px;
+}
+
+.weather--2x2 .weather__city { font-size: 16px; font-weight: 600; }
+.weather--2x2 .weather__now { display: flex; align-items: center; gap: 8px; }
+.weather--2x2 .weather__icon { width: 48px; height: 48px; }
+.weather--2x2 .weather__temperature { font-size: 40px; font-weight: 300; }
+.weather--2x2 .weather__description { font-size: 14px; }
+.weather--2x2 .weather__range { font-size: 12px; opacity: 0.82; white-space: pre; }
+
+/* --- Stock, exchange rate, room climate: small cards with a label above a value -------------- */
+
+.stock,
+.exchange,
+.room {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.stock__symbol,
+.exchange__pair,
+.room__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.88;
+}
+
+.stock__symbol {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock__bottom-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.stock__price,
+.exchange__rate {
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.stock__change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stock__change .icon { width: 9px; height: 9px; }
+.stock__change--up { color: #9af5bd; }
+.stock__change--down { color: #ffb4a8; }
+
+.exchange__pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.exchange__pair .icon { width: 12px; height: 12px; }
+
+.room__title {
+  text-transform: uppercase;
+}
+
+.room__readings {
+  display: flex;
+  justify-content: space-between;
+}
+
+.room__reading {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.room__reading .icon { width: 16px; height: 16px; opacity: 0.85; }
+
+/* --- Today's reminders ---------------------------------------------------------------------- */
+
+.reminders {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 14px 8px;
+}
+
+.reminders__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding-right: 10px;   /* keeps clear of the display's top right corner */
+}
+
+.reminders__title { font-size: 15px; font-weight: 600; }
+.reminders__count { font-size: 12px; opacity: 0.8; }
+
+.reminders__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.reminders__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  font-size: 14px;
+}
+
+.reminders__row .icon { width: 14px; height: 14px; }
+.reminders__time { flex: none; width: 40px; opacity: 0.85; }
+.reminders__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.reminders__row--done .reminders__time,
+.reminders__row--done .reminders__text { opacity: 0.6; }
+.reminders__row--done .icon { color: #9af5bd; }
+.reminders__row--missed .icon,
+.reminders__row--missed .reminders__time { color: #ffc27a; opacity: 1; }
