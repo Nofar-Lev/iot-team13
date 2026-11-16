@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Screen</title>
+  <link rel="stylesheet" href="/static/css/display.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/home.css">
+  <script type="module" src="/static/js/home/home_main.js"></script>
+</head>
+<body class="home-page">
+  <header class="home-header">
+    <div class="home-header__name">
+      <span class="home-header__logo" aria-hidden="true"></span>
+      <h1>Smart Screen</h1>
+    </div>
+    <!-- Which parts of this page are real, said once, where it cannot be missed. -->
+    <p class="sample-note">
+      Sections marked <span class="sample-label">Sample</span> show example data. They are not built yet.
+    </p>
+  </header>
+
+  <main class="home">
+    <!-- Real: the picture is drawn from the saved layout, and the connection state is live. -->
+    <section class="card display-card">
+      <div class="card__header">
+        <h2 class="card__title">Your display</h2>
+        <span class="display-status" id="display-status"></span>
+      </div>
+      <div class="display-card__preview" id="display-preview"></div>
+      <div class="display-card__screens" id="display-screens"></div>
+      <div class="display-card__footer">
+        <span class="display-card__saved" id="display-saved"></span>
+        <a class="button button--primary" href="/editor" id="edit-button">Edit display</a>
+      </div>
+    </section>
+
+    <div class="home__side">
+      <!-- Sample: an example of the reminders section. -->
+      <section class="card card--sample" id="reminders-card">
+        <div class="card__header">
+          <h2 class="card__title">Today's reminders</h2>
+          <span class="sample-label">Sample</span>
+        </div>
+        <p class="card__summary" id="reminders-summary"></p>
+        <ul class="reminder-list" id="reminder-list"></ul>
+        <button class="button" id="add-reminder-button" type="button">Add reminder</button>
+      </section>
+
+      <!-- Sample: an example of adding a reminder by typing or saying it. -->
+      <section class="card card--sample" id="assistant-card">
+        <div class="card__header">
+          <h2 class="card__title">Tell it what to remember</h2>
+          <span class="sample-label">Sample</span>
+        </div>
+        <p class="card__summary">Type it or say it, the way you would tell a person.</p>
+        <div class="assistant-box">
+          <input class="assistant-box__input" id="assistant-input" type="text"
+                 placeholder="Remind me to take my pills at nine" autocomplete="off">
+          <button class="icon-button" id="microphone-button" type="button" aria-label="Say it"></button>
+          <button class="button button--primary" id="assistant-send-button" type="button">Send</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
