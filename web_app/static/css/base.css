@@ -1,0 +1,156 @@
+/* The look shared by the app's pages (home and editor): colours, text, buttons, messages.
+   The font itself is declared in display.css, which every page loads. */
+
+:root {
+  --page: #f3f1ed;
+  --surface: #ffffff;
+  --ink: #1e2233;
+  --ink-soft: #636a80;
+  --line: #e4e1da;
+  --accent: #4f5bd5;
+  --accent-dark: #3f49b8;
+  --accent-soft: #eceefd;
+  --good: #1f9d63;
+  --danger: #c2413a;
+  --danger-soft: #fdecea;
+  --sample: #8a5d0b;
+  --sample-soft: #fdf1d3;
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* An element with the "hidden" attribute is hidden, whatever its other styles say. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Buttons -------------------------------------------------------------------------------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.button:hover:not(:disabled) {
+  border-color: #c9c5bb;
+  background: #faf9f7;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.button--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.button--primary:hover:not(:disabled) {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+}
+
+.button--quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.button--danger,
+.button--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* --- The short message at the bottom of the page -------------------------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  z-index: 200;
+  max-width: min(560px, 90vw);
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: 0 8px 30px rgba(30, 34, 51, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.toast--showing {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.toast--success { background: #17603f; }
+.toast--problem { background: #96302a; }

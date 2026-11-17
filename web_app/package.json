@@ -1,0 +1,9 @@
+{
+  "name": "smart-screen-web-app",
+  "private": true,
+  "description": "The pages need no build step and no packages. This file only tells Node that the .js files are modules, so that the logic tests can load them.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test js_tests/"
+  }
+}
