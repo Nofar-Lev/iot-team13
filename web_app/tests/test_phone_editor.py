@@ -175,6 +175,21 @@ def test_a_swipe_on_the_preview_moves_between_screens(open_page):
     expect(shown_screen(editor)).to_have_attribute("data-screen", "0")
 
 
+def test_a_tap_right_after_a_swipe_is_not_lost(open_page):
+    # A browser reads a swipe that ends in full movement as a "fling", and then swallows the
+    # next tap, wherever it lands. The preview tells it not to.
+    editor = open_phone_editor(open_page)
+    finger_swipe(editor, preview_point(editor, 0.7, 0.4), preview_point(editor, 0.3, 0.4))
+    expect(shown_screen(editor)).to_have_attribute("data-screen", "1")
+
+    editor.locator("#previous-screen-button").tap()                                           # at once
+    expect(shown_screen(editor)).to_have_attribute("data-screen", "0")
+
+    finger_swipe(editor, preview_point(editor, 0.3, 0.4), preview_point(editor, 0.7, 0.4))   # a swipe that changes nothing
+    editor.locator("#add-widget-button").tap()                                                # and a tap in the panel
+    expect(editor.locator("#panel")).to_have_attribute("data-showing", "add-widget")
+
+
 def test_a_swipe_never_goes_past_the_first_or_the_last_screen(open_page):
     editor = open_phone_editor(open_page)
 

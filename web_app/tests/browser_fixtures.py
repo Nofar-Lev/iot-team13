@@ -139,22 +139,65 @@ def open_page(browser, server):
 
 # --- A finger on a phone's screen ----------------------------------------------------------------
 
-def finger_swipe(page, start: tuple, end: tuple, steps: int = 8) -> None:
-    """Put a finger down at start, move it to end, and lift it, as real touches.
+class Finger:
+    """One finger on a phone's screen, sending real touches.
 
     Playwright's own mouse makes mouse events. A phone makes touch events, which the browser
     treats differently (it may take them for a scroll), so the phone tests use real touches.
     They are sent through the browser's debugging channel, which only Chromium has.
+
+        finger = Finger(page)
+        finger.down((100, 200))
+        finger.rest(0.45)             # keep it still: long enough for a hold to take
+        finger.move_to((300, 200))
+        finger.up()
     """
-    channel = page.context.new_cdp_session(page)
 
-    def touch(kind: str, points: list) -> None:
-        channel.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+    def __init__(self, page):
+        self._page = page
+        self._channel = page.context.new_cdp_session(page)
+        self._at = None
 
-    touch("touchStart", [{"x": start[0], "y": start[1]}])
-    for step in range(1, steps + 1):
-        x = start[0] + (end[0] - start[0]) * step / steps
-        y = start[1] + (end[1] - start[1]) * step / steps
-        touch("touchMove", [{"x": x, "y": y}])
-    touch("touchEnd", [])
-    channel.detach()
+    def _touch(self, kind: str, points: list) -> None:
+        self._channel.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+
+    def down(self, point: tuple) -> None:
+        self._at = point
+        self._touch("touchStart", [{"x": point[0], "y": point[1]}])
+
+    def rest(self, seconds: float) -> None:
+        """Keep the finger where it is."""
+        self._page.wait_for_timeout(seconds * 1000)
+
+    def move_to(self, point: tuple, steps: int = 8) -> None:
+        start = self._at
+        for step in range(1, steps + 1):
+            x = start[0] + (point[0] - start[0]) * step / steps
+            y = start[1] + (point[1] - start[1]) * step / steps
+            self._touch("touchMove", [{"x": x, "y": y}])
+        self._at = point
+
+    def up(self) -> None:
+        self._touch("touchEnd", [])
+        self._at = None
+
+
+def finger_swipe(page, start: tuple, end: tuple, steps: int = 8) -> None:
+    """Put a finger down at start, move it to end at once, and lift it."""
+    finger = Finger(page)
+    finger.down(start)
+    finger.move_to(end, steps)
+    finger.up()
+
+
+# A little longer than the time a finger must stay put for a hold to take (press_and_hold.js).
+LONG_ENOUGH_TO_HOLD = 0.45
+
+
+def finger_hold_and_carry(page, start: tuple, end: tuple) -> None:
+    """Put a finger down at start, keep it still until the hold takes, carry to end, lift."""
+    finger = Finger(page)
+    finger.down(start)
+    finger.rest(LONG_ENOUGH_TO_HOLD)
+    finger.move_to(end)
+    finger.up()

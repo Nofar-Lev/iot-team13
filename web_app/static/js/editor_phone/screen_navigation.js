@@ -1,18 +1,17 @@
-// Moving between screens: the two round arrows on the preview's side edges, the dots under
-// it, and the swipe. On the last screen the right arrow adds a screen.
+// Moving between screens with the two round arrows on the preview's side edges, and the dots
+// under it. On the last screen the right arrow adds a screen. (The swipe between screens is a
+// touch on the preview, and is read by preview_touches.js.)
 
 import { el } from "../common/dom.js";
 import { icon } from "../common/icons.js";
-import { watchForSwipes } from "./screen_swipe.js";
 
 /**
  * state:           the editor's state (editing/editor_state.js).
  * previousButton, nextButton: the two arrows.
  * dots:            the element that holds one dot per screen.
- * swipeArea:       the element on which a sideways swipe changes screen.
  * onAddScreen():   called when the right arrow is pressed on the last screen.
  */
-export function setUpScreenNavigation({ state, previousButton, nextButton, dots, swipeArea, onAddScreen }) {
+export function setUpScreenNavigation({ state, previousButton, nextButton, dots, onAddScreen }) {
   const isOnLastScreen = () => state.screenIndex() === state.screenCount() - 1;
 
   function redraw() {
@@ -41,9 +40,6 @@ export function setUpScreenNavigation({ state, previousButton, nextButton, dots,
     if (isOnLastScreen()) onAddScreen();
     else state.showScreen(state.screenIndex() + 1);
   });
-
-  // A swipe only moves between the screens that exist. It never adds one.
-  watchForSwipes(swipeArea, { onStep: (step) => state.showScreen(state.screenIndex() + step) });
 
   state.subscribe((kindOfChange) => {
     if (kindOfChange === "screen" || kindOfChange === "saved") redraw();

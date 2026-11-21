@@ -3,9 +3,14 @@
 //   start_screen.js          the one button that opens the editing screen in full screen
 //   full_screen_sideways.js  asking the browser for full screen and a sideways picture
 //   preview.js               the picture of the display, with its grid, sized to the screen
-//   screen_navigation.js     the round arrows, the dots, and the swipe between screens
+//   screen_navigation.js     the round arrows and the dots between screens
+//   preview_touches.js       a touch on the preview: tap to select, swipe between screens,
+//                            press and hold to move a widget
 //   screen_swipe.js          what counts as a swipe
-//   selection_by_tap.js      a tap on a widget selects it; a tap elsewhere lets go of it
+//   press_and_hold.js        what counts as a hold
+//   carrying.js              what is shown while a widget is carried, and where it may land
+//   carrying_from_list.js    carrying a new widget out of the panel's list
+//   taps_beside_the_preview.js  a tap next to the preview lets go of the selected widget
 //   panel.js                 the panel on the right
 //   panel_router.js          which screen the panel shows
 //   main_menu.js             the panel while nothing is selected
@@ -25,16 +30,19 @@ import { showToast } from "../common/toast.js";
 import { createEditorState } from "../editing/editor_state.js";
 import { createAddWidgetScreen } from "./add_widget_screen.js";
 import { createBackgroundsScreen } from "./backgrounds_screen.js";
+import { createCarrying } from "./carrying.js";
+import { createCarryingFromList } from "./carrying_from_list.js";
 import { guardUnsavedChanges } from "./leaving.js";
 import { createMainMenuScreen } from "./main_menu.js";
 import { createPanel } from "./panel.js";
 import { createPanelRouter } from "./panel_router.js";
 import { createPreview } from "./preview.js";
+import { setUpPreviewTouches } from "./preview_touches.js";
 import { createSaving } from "./saving.js";
 import { DISCARD, SAVE, createUnsavedChangesDialog } from "./unsaved_changes_dialog.js";
 import { setUpScreenNavigation } from "./screen_navigation.js";
-import { setUpSelectionByTap } from "./selection_by_tap.js";
 import { setUpStartScreen } from "./start_screen.js";
+import { setUpTapsBesideThePreview } from "./taps_beside_the_preview.js";
 import { createWidgetOptionsScreen } from "./widget_options_screen.js";
 import { createWidgetSizesScreen } from "./widget_sizes_screen.js";
 
@@ -76,9 +84,12 @@ async function startPhoneEditor() {
     previousButton: document.getElementById("previous-screen-button"),
     nextButton: document.getElementById("next-screen-button"),
     dots: document.getElementById("screen-dots"),
-    swipeArea: displayView.frame,
     onAddScreen: () => state.addScreen(),
   });
+
+  // What is shown while a widget is carried: by a hold on the preview, or out of the list.
+  const carrying = createCarrying({ state, displayView });
+  const makeCarriable = createCarryingFromList({ state, carrying, catalog, demoData });
 
   // --- Saving, and whether a display is connected to hear about it --------------------------------
 
@@ -135,18 +146,21 @@ async function startPhoneEditor() {
         demoData,
         onBack: backToMainMenu,
         onChooseSizes: (widgetType) => router.openWidgetSizes(widgetType),
+        makeCarriable,
       }),
-      widgetSizes: createWidgetSizesScreen({ panel, state, catalog, demoData, onBack: () => router.openAddWidget() }),
+      widgetSizes: createWidgetSizesScreen({
+        panel, state, catalog, demoData, makeCarriable, onBack: () => router.openAddWidget(),
+      }),
       widgetOptions: createWidgetOptionsScreen({ panel, state, onBack: backToMainMenu }),
       backgrounds: createBackgroundsScreen({ panel, state, catalog, onBack: backToMainMenu }),
     },
   });
 
-  setUpSelectionByTap({
+  setUpPreviewTouches({ state, displayView, carrying, onTapOutside: backToMainMenu });
+  setUpTapsBesideThePreview({
     stage: document.getElementById("stage"),
     previewFrame: displayView.frame,
-    state,
-    onTapOutside: backToMainMenu,
+    onTapBeside: backToMainMenu,
   });
 
   // --- Keeping the preview in step with the state -------------------------------------------------

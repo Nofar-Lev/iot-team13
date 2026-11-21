@@ -126,6 +126,66 @@
   pointer-events: none;
 }
 
+/* --- Carrying a widget ----------------------------------------------------------------------- */
+
+/* While a widget is carried the grid is brighter: it is what the widget will land on. */
+.display--carrying .preview-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.55) 1px, transparent 1px);
+  opacity: 1;
+}
+
+/* The widget that was lifted stays faintly where it was, until it is dropped. */
+.preview .widget--being-moved {
+  opacity: 0.3;
+}
+
+/* The ghost: the carried widget, on the cells it would take. Green where it fits, red where
+   it would overlap another widget. */
+.carry-ghost {
+  position: absolute;
+}
+
+.carry-ghost > .widget {
+  opacity: 0.9;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3));   /* it looks lifted off the screen */
+}
+
+.carry-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed;
+  border-radius: 16px;
+}
+
+.carry-ghost--fits::after {
+  border-color: #7dffb0;
+  background: rgba(110, 255, 170, 0.2);
+}
+
+.carry-ghost--blocked::after {
+  border-color: #ff9a90;
+  background: rgba(255, 80, 70, 0.36);
+}
+
+/* A new widget, on its way from the list to the preview: its small picture, under the finger. */
+.carry-floating {
+  position: fixed;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(30, 34, 51, 0.35);
+  opacity: 0.92;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* The row it was lifted from. */
+.widget-row--being-carried {
+  border-color: var(--accent);
+  box-shadow: 0 3px 12px rgba(79, 91, 213, 0.18);
+}
+
 /* --- Moving between screens ------------------------------------------------------------------ */
 
 /* A round button on the middle of each side edge of the preview, half over it. */
@@ -485,6 +545,18 @@
   display: none;
 }
 
+.settings {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A box that is typed in goes to the top of the panel, whatever its place in the form. The
+   on-screen keyboard covers the lower part of the screen, and the top is what stays visible.
+   (A time of day is not typed: the phone shows its own clock for it.) */
+.settings .field:has(input[type="text"], input[type="number"]) {
+  order: -1;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -592,6 +664,7 @@
 
 /* "Remove widget", under the options: bold and grey, like "Remove this screen". */
 .settings__remove {
+  align-self: flex-start;
   min-height: 44px;
   margin-top: 2px;
   padding-left: 4px;

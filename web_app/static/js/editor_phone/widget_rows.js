@@ -18,8 +18,10 @@ export const sizeAsText = (size) => size.replace("x", " × ");
  * name, note:          the row's two lines of text.
  * hasRoom:             false greys the row out. A tap on it then only says why.
  * onChoose():          called when a row that has room is tapped.
+ * makeCarriable(row, catalogWidget, size): given for a row whose widget can also be lifted by
+ *                      press and hold and carried onto the preview (carrying_from_list.js).
  */
-export function widgetRow({ catalog, demoData, catalogWidget, size, name, note, hasRoom, onChoose }) {
+export function widgetRow({ catalog, demoData, catalogWidget, size, name, note, hasRoom, onChoose, makeCarriable }) {
   const { rows } = parseSize(size);
   const picture = createWidgetPicture(
     { type: catalogWidget.type, size, settings: defaultSettings(catalogWidget) },
@@ -41,5 +43,6 @@ export function widgetRow({ catalog, demoData, catalogWidget, size, name, note, 
     if (hasRoom) onChoose();
     else showToast("This screen has no room for that widget.", "problem");
   });
+  if (hasRoom && makeCarriable) makeCarriable(row, catalogWidget, size);
   return row;
 }
