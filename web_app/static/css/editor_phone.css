@@ -599,6 +599,73 @@
   font-weight: 600;
 }
 
+/* --- The question about unsaved changes --------------------------------------------------------- */
+
+/* Covers the editing screen, dimmed, with the dialog in its middle. */
+.dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(30, 34, 51, 0.45);
+}
+
+.dialog {
+  width: min(480px, 100%);
+  padding: 18px 20px 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--phone-ink);
+  box-shadow: 0 16px 48px rgba(30, 34, 51, 0.35);
+}
+
+.dialog__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.dialog__text {
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+
+.dialog__buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dialog__button {
+  flex: 1 1 auto;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Save: the app's purple. Discard: the muted maroon of everything that throws work away.
+   Return to the editor: clear, with only an outline. */
+.dialog__button--save {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.dialog__button--discard {
+  background: #f5e6e4;
+  color: #8a3536;
+}
+
+.dialog__button--return {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--phone-ink);
+}
+
 /* --- The phone held upright --------------------------------------------------------------------- */
 
 /* The editor is made for a phone held sideways. Where the browser cannot turn the picture by

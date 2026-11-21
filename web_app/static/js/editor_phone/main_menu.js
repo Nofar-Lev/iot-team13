@@ -5,8 +5,9 @@
 // they are here and nowhere else in the panel.
 //
 // A button that would throw work away asks for a second tap, and only when there is something
-// to lose: Discard always (it is greyed out when nothing changed), Remove this screen when
-// the screen has widgets on it, Home when there are unsaved changes.
+// to lose: Discard always (it is greyed out when nothing changed), and Remove this screen when
+// the screen has widgets on it. Home asks too, with a dialog of its own, which is not this
+// file's business: it only says that Home was pressed.
 
 import { el } from "../common/dom.js";
 import { icon } from "../common/icons.js";
@@ -25,7 +26,7 @@ function buttonWithIcon(className, id, iconName, text) {
  * state:           the editor's state (editing/editor_state.js).
  * onAddWidget(), onBackgrounds(): open those screens of the panel.
  * onSave():        save the layout.
- * onGoHome():      leave the editor for the home page.
+ * onGoHome():      Home was pressed.
  */
 export function createMainMenuScreen({ panel, state, onAddWidget, onBackgrounds, onSave, onGoHome }) {
   const home = buttonWithIcon("panel__home", "home-button", "home", "Home");
@@ -45,15 +46,9 @@ export function createMainMenuScreen({ panel, state, onAddWidget, onBackgrounds,
   backgrounds.button.addEventListener("click", onBackgrounds);
   saveButton.addEventListener("click", onSave);
 
+  home.button.addEventListener("click", onGoHome);
+
   const questions = [
-    askForSecondClick({
-      button: home.button,
-      labelElement: home.label,
-      usualText: "Home",
-      askingText: "Tap again to leave",
-      shouldAsk: () => state.hasUnsavedChanges(),
-      onConfirmed: onGoHome,
-    }),
     askForSecondClick({
       button: removeScreen.button,
       labelElement: removeScreen.label,

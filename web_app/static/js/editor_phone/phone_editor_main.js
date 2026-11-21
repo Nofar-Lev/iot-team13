@@ -13,7 +13,8 @@
 //   widget_sizes_screen.js   the sizes of one widget        (uses widget_rows.js)
 //   widget_options_screen.js the selected widget's settings
 //   backgrounds_screen.js    the backgrounds of the current screen
-//   saving.js, leaving.js    saving the layout; leaving with unsaved changes
+//   saving.js                saving the layout
+//   leaving.js, unsaved_changes_dialog.js   leaving the editor with unsaved changes
 //
 // The rules of editing, the settings form and the small widget pictures (../editing/) and the
 // drawing of the display (../display/) are the same ones the desktop editor uses.
@@ -30,6 +31,7 @@ import { createPanel } from "./panel.js";
 import { createPanelRouter } from "./panel_router.js";
 import { createPreview } from "./preview.js";
 import { createSaving } from "./saving.js";
+import { DISCARD, SAVE, createUnsavedChangesDialog } from "./unsaved_changes_dialog.js";
 import { setUpScreenNavigation } from "./screen_navigation.js";
 import { setUpSelectionByTap } from "./selection_by_tap.js";
 import { setUpStartScreen } from "./start_screen.js";
@@ -90,6 +92,22 @@ async function startPhoneEditor() {
   });
   const saving = createSaving({ state, isDisplayOnline: () => displayIsOnline });
   const unsavedChangesGuard = guardUnsavedChanges(state);
+  const unsavedChangesDialog = createUnsavedChangesDialog(document.getElementById("editing-screen"));
+
+  /** Home was pressed. With unsaved changes, the user chooses what happens to them first. */
+  async function goHome() {
+    if (!state.hasUnsavedChanges()) {
+      unsavedChangesGuard.leaveTo("/");
+      return;
+    }
+    const choice = await unsavedChangesDialog.ask();
+    if (choice === DISCARD) {
+      unsavedChangesGuard.leaveTo("/");
+    } else if (choice === SAVE) {
+      // If the save fails, the user stays in the editor, with the changes and a message.
+      if (await saving.save()) unsavedChangesGuard.leaveTo("/");
+    }
+  }
 
   // --- The panel --------------------------------------------------------------------------------
 
@@ -108,7 +126,7 @@ async function startPhoneEditor() {
         onAddWidget: () => router.openAddWidget(),
         onBackgrounds: () => router.openBackgrounds(),
         onSave: () => saving.save(),
-        onGoHome: () => unsavedChangesGuard.leaveTo("/"),
+        onGoHome: goHome,
       }),
       addWidget: createAddWidgetScreen({
         panel,

@@ -376,15 +376,145 @@ def test_discard_asks_for_a_second_tap_and_then_undoes_the_changes(open_page):
     expect(editor.locator("#save-button")).to_be_disabled()
 
 
-def test_home_asks_before_leaving_with_unsaved_changes(open_page):
+# --- Leaving with unsaved changes --------------------------------------------------------------------------------
+
+def dialog(page):
+    return page.locator("#unsaved-changes-dialog")
+
+
+def test_home_asks_what_to_do_with_unsaved_changes(open_page):
     editor = open_phone_editor(open_page)
     add_a_date_and_return_to_the_main_menu(editor)
-    home = editor.locator("#home-button")
+    expect(dialog(editor)).to_be_hidden()
 
-    home.tap()
-    expect(home).to_have_text("Tap again to leave")
+    editor.locator("#home-button").tap()
+    expect(dialog(editor)).to_be_visible()
+    expect(dialog(editor).locator(".dialog__title")).to_have_text("Unsaved changes")
+    expect(dialog(editor).locator(".dialog__button")).to_have_text(["Save", "Discard", "Return to the editor"])
     expect(editor.locator("#editing-screen")).to_be_visible()      # still in the editor
 
-    home.tap()
+
+def test_the_three_choices_have_their_colours(open_page):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+
+    def colours_of(button_id):
+        return editor.locator(f"#{button_id}").evaluate(
+            "element => { const s = getComputedStyle(element); return [s.backgroundColor, s.color]; }"
+        )
+
+    assert colours_of("leave-and-save-button") == ["rgb(79, 91, 213)", "rgb(255, 255, 255)"]       # purple
+    assert colours_of("leave-and-discard-button") == ["rgb(245, 230, 228)", "rgb(138, 53, 54)"]    # maroon
+    assert colours_of("return-to-editor-button")[0] == "rgba(0, 0, 0, 0)"                          # clear
+
+
+def test_return_to_the_editor_keeps_the_changes_and_stays(open_page):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+    editor.locator("#return-to-editor-button").tap()
+
+    expect(dialog(editor)).to_be_hidden()
+    expect(widgets_on_preview(editor)).to_have_count(5)
+    expect(editor.locator("#save-button")).to_be_enabled()
+
+
+def test_a_tap_beside_the_dialog_also_returns_to_the_editor(open_page):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+
+    editor.touchscreen.tap(12, 12)                                 # a corner of the screen, beside the dialog
+    expect(dialog(editor)).to_be_hidden()
+    expect(widgets_on_preview(editor)).to_have_count(5)
+    expect(editor.locator("#editing-screen")).to_be_visible()
+
+
+def test_discard_leaves_without_saving(open_page, server):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+    editor.locator("#leave-and-discard-button").tap()
+
     editor.wait_for_url("**/")
     editor.wait_for_selector(".home-page")
+    assert server.read_layout()["revision"] == 0                   # nothing was saved
+
+
+def test_save_saves_and_then_leaves(open_page, server):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+    editor.locator("#leave-and-save-button").tap()
+
+    editor.wait_for_url("**/")
+    editor.wait_for_selector(".home-page")
+    saved = server.read_layout()
+    assert saved["revision"] == 1
+    assert len(saved["layout"]["screens"][0]["widgets"]) == 5
+
+
+def test_when_the_save_fails_the_user_stays_in_the_editor_with_the_changes(open_page, server):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    server.stop()
+
+    editor.locator("#home-button").tap()
+    editor.locator("#leave-and-save-button").tap()
+
+    expect(toast(editor)).to_have_text("Could not reach the server. Nothing was saved.")
+    expect(dialog(editor)).to_be_hidden()
+    expect(editor.locator("#editing-screen")).to_be_visible()
+    expect(widgets_on_preview(editor)).to_have_count(5)
+    expect(editor.locator("#save-button")).to_be_enabled()
+
+
+def test_with_nothing_unsaved_home_does_not_ask(open_page):
+    editor = open_phone_editor(open_page)
+    editor.locator("#home-button").tap()
+    editor.wait_for_url("**/")
+    editor.wait_for_selector(".home-page")
+
+
+# --- The on-screen keyboard ------------------------------------------------------------------------------------
+
+def test_a_box_that_is_typed_in_is_at_the_top_of_the_panel(open_page):
+    """The keyboard covers the lower part of the screen, so what is typed in must be on top.
+    Checked for every widget of the starting layout, on both of its screens."""
+    editor = open_phone_editor(open_page)
+    places = [
+        [(3, 1), (3, 2.5), (1, 3.5), (5, 3.5)],                    # screen 1: clock, date, weather, room
+        [(2, 1), (5, 0.5), (1, 3), (3, 2.5), (3, 3.5)],            # screen 2: reminders, clock, weather, stock, rate
+    ]
+    widgets_with_a_typing_box = 0
+    for screen, cells in enumerate(places):
+        if screen == 1:
+            editor.locator("#next-screen-button").tap()
+        for cell in cells:
+            tap_cell(editor, *cell)
+            expect(panel(editor)).to_have_attribute("data-showing", "widget-options")
+            rows = editor.evaluate("""() => [...document.querySelectorAll('.settings .field')]
+                .filter((row) => !row.hidden)
+                .map((row) => ({ top: row.getBoundingClientRect().top,
+                                 typed: row.querySelector('input[type=text], input[type=number]') !== null }))""")
+            typed = [row["top"] for row in rows if row["typed"]]
+            others = [row["top"] for row in rows if not row["typed"]]
+            if typed:
+                widgets_with_a_typing_box += 1
+                assert not others or max(typed) < min(others), cell
+    assert widgets_with_a_typing_box == 3                          # the two weathers and the stock
+
+
+def test_the_form_can_be_asked_to_put_a_typing_box_first_even_when_the_catalog_does_not(open_page):
+    """The rule is the panel's, not the catalog's: a typing box that the form lists last still
+    comes out on top."""
+    editor = open_phone_editor(open_page)
+    tap_cell(editor, *THE_WEATHER)
+    # Move the city's row to the end of the form, as a catalog that listed it last would.
+    editor.evaluate("""() => { const form = document.querySelector('.settings');
+        form.querySelector('.settings__remove').before(form.querySelector('[data-setting-key="city"]')); }""")
+
+    city = editor.locator('[data-setting-key="city"]').bounding_box()
+    units = editor.locator('[data-setting-key="units"]').bounding_box()
+    assert city["y"] < units["y"]

@@ -1,8 +1,9 @@
 // Leaving the editor while there are unsaved changes.
 //
 // A desktop browser can be told to ask "leave this page?" first. Phone browsers often do not
-// ask. So the editor's own way out, the Home button, asks by itself (main_menu.js), and this
-// file keeps the browser's question for every other way of leaving.
+// ask. So the editor's own way out, the Home button, asks by itself with a dialog
+// (unsaved_changes_dialog.js), and this file keeps the browser's question for every other way
+// of leaving.
 
 export function guardUnsavedChanges(state) {
   let isLeavingOnPurpose = false;
