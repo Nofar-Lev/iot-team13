@@ -5,7 +5,7 @@
 // do not happen, the editor still works; the page asks the user to turn the phone.
 
 /**
- * Try to go full screen and to hold the picture sideways. Call it from a tap.
+ * Try to go full screen and to hold the picture sideways. Call it as the answer to a tap.
  * Answers true if the page is now in full screen.
  */
 export async function enterFullScreenSideways() {

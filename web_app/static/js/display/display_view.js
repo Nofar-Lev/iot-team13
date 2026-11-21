@@ -70,9 +70,28 @@ export function createDisplayView({ catalog, demoData }) {
   };
 }
 
-/** Ask the browser to fetch every background now, so switching screens never shows a blank. */
+// The background pictures that were fetched ahead. They are kept here for as long as the page
+// lives: a picture that nothing holds on to may be dropped by the browser, and fetched again.
+const backgroundsFetchedAhead = new Map();
+
+/**
+ * Ask the browser to fetch every background now, so switching screens never shows a blank.
+ * Returns a promise that is done when every picture has arrived (or failed to), for a page
+ * that wants to wait for them.
+ */
 export function preloadBackgrounds(catalog) {
-  for (const background of catalog.backgrounds) {
-    new Image().src = `/static/backgrounds/${background.file}`;
-  }
+  const arrivals = catalog.backgrounds.map((background) => {
+    const address = `/static/backgrounds/${background.file}`;
+    if (!backgroundsFetchedAhead.has(address)) {
+      const picture = new Image();
+      const arrival = new Promise((done) => {
+        picture.onload = done;
+        picture.onerror = done;   // a missing picture must not keep a page waiting
+      });
+      picture.src = address;
+      backgroundsFetchedAhead.set(address, { picture, arrival });
+    }
+    return backgroundsFetchedAhead.get(address).arrival;
+  });
+  return Promise.all(arrivals);
 }

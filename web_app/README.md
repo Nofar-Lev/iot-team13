@@ -98,7 +98,7 @@ The editor's list, the settings form and the server's checks pick it up from the
 | Address | What it does |
 |---|---|
 | `/`, `/editor`, `/device` | The three pages. `/editor` is the desktop editor or the phone editor, by the kind of browser; `/editor?view=phone` and `/editor?view=desktop` choose by hand |
-| `/static/...` | The files the pages load |
+| `/static/...` | The files the pages load. A browser may keep the background pictures and the font for a day; it asks about everything else every time, so an edit to a page, a style or a script shows on the next refresh. For that reason **a background picture is never changed in place**: a new version is a new file with a new name (`forest-v2.jpg`), the old file is deleted, and the catalog's entry is pointed at the new file |
 | `GET /api/catalog` | The widget catalog: widgets, grid, backgrounds |
 | `GET /api/layout` | The saved layout, its revision number and when it was saved |
 | `PUT /api/layout` | Checks a layout. Saves it and tells the connected pages, or answers with what is wrong |

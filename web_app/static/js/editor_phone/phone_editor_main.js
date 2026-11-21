@@ -1,6 +1,7 @@
 // The phone editor: connects its parts to one another.
 //
-//   start_screen.js          the one button that opens the editing screen in full screen
+//   start_screen.js          "Loading editor..." until the editor is ready, then the one
+//                            button that opens the editing screen in full screen
 //   full_screen_sideways.js  asking the browser for full screen and a sideways picture
 //   preview.js               the picture of the display, with its grid, sized to the screen
 //   screen_navigation.js     the round arrows and the dots between screens
@@ -27,6 +28,7 @@
 import { openLiveChannel } from "../common/live_channel.js";
 import { fetchCatalog, fetchDemoData, fetchSavedLayout } from "../common/server_api.js";
 import { showToast } from "../common/toast.js";
+import { preloadBackgrounds } from "../display/display_view.js";
 import { createEditorState } from "../editing/editor_state.js";
 import { createAddWidgetScreen } from "./add_widget_screen.js";
 import { createBackgroundsScreen } from "./backgrounds_screen.js";
@@ -46,15 +48,42 @@ import { setUpTapsBesideThePreview } from "./taps_beside_the_preview.js";
 import { createWidgetOptionsScreen } from "./widget_options_screen.js";
 import { createWidgetSizesScreen } from "./widget_sizes_screen.js";
 
+// The editor waits for the background pictures before it says it is ready, but not for ever:
+// after this long it is ready anyway, and a picture still on its way appears when it arrives.
+const LONGEST_WAIT_FOR_PICTURES_MS = 4000;
+
+const wait = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
+
 async function startPhoneEditor() {
-  // The start screen works from the first moment, before anything is fetched.
+  // The start screen shows "Loading editor..." until the editor says it is ready, and then
+  // the button that opens the editing screen.
+  let sayWhetherTheEditorIsReady = null;
+  const whenEditorIsReady = new Promise((resolve) => {
+    sayWhetherTheEditorIsReady = resolve;
+  });
   setUpStartScreen({
     startScreen: document.getElementById("start-screen"),
     editingScreen: document.getElementById("editing-screen"),
     openButton: document.getElementById("open-editor-button"),
+    whenEditorIsReady,
   });
 
+  try {
+    await buildEditor();
+    sayWhetherTheEditorIsReady(true);
+    document.body.dataset.ready = "true";
+  } catch (problem) {
+    sayWhetherTheEditorIsReady(false);
+    throw problem;
+  }
+}
+
+async function buildEditor() {
   const [catalog, demoData, saved] = await Promise.all([fetchCatalog(), fetchDemoData(), fetchSavedLayout()]);
+  // Every background is fetched now, while the rest of the editor is put together: the ones
+  // of the other screens, and the ones the Backgrounds list shows. Moving between screens
+  // then never waits for a picture.
+  const backgroundsHaveArrived = preloadBackgrounds(catalog);
   const state = createEditorState({ catalog, savedLayout: saved.layout });
 
   // --- The preview ------------------------------------------------------------------------------
@@ -174,7 +203,7 @@ async function startPhoneEditor() {
   drawCurrentScreen();
   router.showWhatApplies();
 
-  document.body.dataset.ready = "true";
+  await Promise.race([backgroundsHaveArrived, wait(LONGEST_WAIT_FOR_PICTURES_MS)]);
 }
 
 startPhoneEditor().catch((problem) => {

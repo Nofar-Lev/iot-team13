@@ -117,10 +117,15 @@ def open_page(browser, server):
     open_page(address, viewport) opens it as a desktop browser would.
     open_page(address, viewport, as_phone=True) opens it as a phone: a touch screen, a phone's
     way of fitting pages to its screen, and a phone's label.
+
+    prepare(page), if given, is called before the page is opened, for a test that has to
+    watch or hold back what the page fetches. wait_until says how much of the page must have
+    arrived before open_page returns: "load" (everything, the usual) or "commit" (as soon as
+    the server starts answering).
     """
     contexts, page_errors = [], []
 
-    def open_it(address: str, viewport: dict, as_phone: bool = False):
+    def open_it(address: str, viewport: dict, as_phone: bool = False, prepare=None, wait_until: str = "load"):
         phone_settings = (
             {"has_touch": True, "is_mobile": True, "user_agent": ANDROID_PHONE_LABEL} if as_phone else {}
         )
@@ -128,7 +133,9 @@ def open_page(browser, server):
         contexts.append(context)
         page = context.new_page()
         page.on("pageerror", lambda error: page_errors.append(f"{address}: {error}"))
-        page.goto(server.address + address)
+        if prepare:
+            prepare(page)
+        page.goto(server.address + address, wait_until=wait_until)
         return page
 
     yield open_it

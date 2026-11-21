@@ -18,11 +18,26 @@
        and the drawing of the display, and nothing else. -->
 
   <!-- Shown first, and again after leaving full screen. A page may only go full screen after
-       a tap, so the editor starts with one button. -->
-  <main class="start" id="start-screen">
+       a tap, so the editor starts with one button.
+
+       The button is not there from the start. The page shows first, and the editor's code,
+       the layout and the pictures arrive after it; a button shown before them would be a
+       button that does nothing yet. So data-state starts as "loading": a turning circle and
+       "Loading editor...". The editor's code changes it to "ready" (the button shows) once
+       everything is there, so a tap opens the editor at once. The other states are "opening"
+       (tapped; the browser is switching to full screen) and "failed" (the editor could not
+       load). -->
+  <main class="start" id="start-screen" data-state="loading">
     <h1 class="start__title">Display editor</h1>
     <p class="start__text">The editor uses the whole screen, with the phone held sideways.</p>
     <button class="button button--primary start__button" id="open-editor-button" type="button">Open the editor</button>
+    <p class="start__loading" id="start-loading" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Loading editor&hellip;</span>
+    </p>
+    <p class="start__failed" id="start-failed" role="alert">
+      The editor could not load. Check the connection to the server, then refresh the page.
+    </p>
     <a class="start__home" href="/">&lsaquo; Back to home</a>
   </main>
 

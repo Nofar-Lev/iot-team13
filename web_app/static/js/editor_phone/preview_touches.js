@@ -10,7 +10,7 @@
 // The three cannot be mistaken for one another: a tap is short and still, a swipe moves at
 // once, and a hold stays put first.
 
-import { shortBuzz, watchPresses } from "./press_and_hold.js";
+import { watchPresses } from "./press_and_hold.js";
 import { screenStepOfSwipe } from "./screen_swipe.js";
 
 // A finger that travelled further than this between going down and coming up was not tapping.
@@ -55,7 +55,6 @@ export function setUpPreviewTouches({ state, displayView, carrying, onTapOutside
       // Selected from the moment it lifts, so the panel shows its options while it is carried.
       state.selectWidget(index);
       element.classList.add("widget--being-moved");
-      shortBuzz();
 
       const box = displayView.display.getBoundingClientRect();
       const fingerCol = ((event.clientX - box.left) / box.width) * state.grid.columns;

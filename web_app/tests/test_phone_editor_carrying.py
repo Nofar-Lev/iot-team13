@@ -46,28 +46,21 @@ def middle_of(locator) -> tuple:
     return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
 
 
-def count_the_buzzes(editor) -> None:
-    """Replace the phone's buzz with a counter, so a test can see that it was asked for."""
-    editor.evaluate("() => { window.buzzes = []; navigator.vibrate = (length) => { window.buzzes.push(length); return true; }; }")
-
-
 # --- Moving a widget on the preview ---------------------------------------------------------------------
 
 def test_a_widget_that_is_held_lifts_and_is_selected(open_page):
     editor = open_phone_editor(open_page)
-    count_the_buzzes(editor)
     finger = Finger(editor)
 
     finger.down(at(editor, THE_WEATHER))
     expect(ghost(editor)).to_be_hidden()                           # not yet: the finger only just went down
     finger.rest(LONG_ENOUGH_TO_HOLD)
 
-    # It lifted: the ghost is on the widget's own cells, the grid is brighter, the phone buzzed.
+    # It lifted: the ghost is on the widget's own cells, and the grid is brighter.
     expect(ghost(editor)).to_be_visible()
     expect(ghost(editor)).to_have_class("carry-ghost carry-ghost--fits")
     assert [ghost(editor).get_attribute("data-col"), ghost(editor).get_attribute("data-row")] == ["0", "3"]
     expect(editor.locator(".preview .display")).to_have_class("display display--carrying")
-    assert editor.evaluate("window.buzzes.length") == 1
     # It is selected from that moment, and the panel shows its options.
     expect(weather(editor)).to_have_class("widget widget--weather widget--2x1 widget--selected widget--being-moved")
     expect(panel(editor)).to_have_attribute("data-showing", "widget-options")
@@ -192,11 +185,15 @@ def test_holding_an_empty_place_does_nothing(open_page):
     expect(editor.locator(".preview .widget--selected")).to_have_count(0)
 
 
-def test_where_the_phone_gives_no_buzz_the_widget_still_lifts(open_page):
+def test_a_hold_never_asks_the_phone_to_buzz(open_page):
+    # Decided: no buzz. On the phone it was tried on, the browser gave none, and a signal that
+    # sometimes comes and sometimes does not is worse than none. The lift on the screen is the signal.
     editor = open_phone_editor(open_page)
-    editor.evaluate("() => { navigator.vibrate = undefined; }")    # as on an iPhone
+    editor.evaluate("() => { window.buzzes = 0; navigator.vibrate = () => { window.buzzes += 1; return true; }; }")
     finger_hold_and_carry(editor, at(editor, THE_WEATHER), at(editor, FREE_PLACE_BOTTOM_MIDDLE))
+
     assert place_of(weather(editor)) == ["160px", "240px"]
+    assert editor.evaluate("window.buzzes") == 0
 
 
 # --- Carrying a new widget out of the list -----------------------------------------------------------------------
@@ -209,15 +206,13 @@ def test_the_list_says_that_a_widget_can_be_held(open_page):
 
 def test_a_widget_held_in_the_list_is_carried_to_the_place_where_it_is_dropped(open_page):
     editor = open_phone_editor(open_page)
-    count_the_buzzes(editor)
     editor.locator("#add-widget-button").tap()
     finger = Finger(editor)
 
     finger.down(middle_of(row_of(editor, "stock")))
     finger.rest(LONG_ENOUGH_TO_HOLD)
-    # Lifted: its small picture is under the finger, and the phone buzzed.
+    # Lifted: its small picture is under the finger.
     expect(editor.locator(".carry-floating")).to_be_visible()
-    assert editor.evaluate("window.buzzes.length") == 1
 
     finger.move_to(at(editor, FREE_PLACE_RIGHT_OF_THE_DATE))
     # Over the preview the ghost takes over from the small picture.

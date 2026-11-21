@@ -99,12 +99,3 @@ export function watchPresses(element, { mayHold, onHoldStart, onHoldMove, onHold
     event.preventDefault();
   }, { capture: true });
 }
-
-/** A short buzz, where the browser gives one without asking. Elsewhere, nothing. */
-export function shortBuzz() {
-  try {
-    navigator.vibrate?.(12);
-  } catch {
-    // No buzz. What is seen on the screen is the signal.
-  }
-}

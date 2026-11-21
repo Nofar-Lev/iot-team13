@@ -52,6 +52,60 @@
   font-weight: 600;
 }
 
+/* The start screen shows one of three things in the same place, by its state:
+     "loading", "opening"   a turning circle and "Loading editor..."
+     "ready"                the button
+     "failed"               a line saying that the editor could not load */
+.start__button,
+.start__loading,
+.start__failed {
+  display: none;
+}
+
+.start[data-state="ready"] .start__button {
+  display: inline-flex;
+}
+
+.start[data-state="loading"] .start__loading,
+.start[data-state="opening"] .start__loading {
+  display: inline-flex;
+}
+
+.start[data-state="failed"] .start__failed {
+  display: block;
+}
+
+.start__loading {
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  color: var(--ink-soft);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.start__failed {
+  max-width: 300px;
+  color: #8a3536;
+  font-weight: 500;
+}
+
+.spinner {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spinner-turn 0.8s linear infinite;
+}
+
+@keyframes spinner-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .start__home {
   padding: 8px;
   color: var(--ink-soft);

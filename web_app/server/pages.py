@@ -19,6 +19,19 @@ FILE_TYPES = {
     ".jpg": "image/jpeg",
 }
 
+# Files that a browser may keep and use again without asking the server: the background
+# pictures and the font. They are the large files, they rarely change, and asking about each
+# one on every visit is what makes pictures appear late on a slow connection. Everything else
+# (pages, styles, scripts) is asked about every time, so that an edit shows on the next refresh.
+FOLDERS_A_BROWSER_MAY_KEEP = ("backgrounds/", "fonts/")
+KEEP_FOR_SECONDS = 24 * 60 * 60   # one day
+
+
+def seconds_a_browser_may_keep(file_path: str):
+    """How long a browser may use its own copy of a static file. None: it asks every time."""
+    return KEEP_FOR_SECONDS if file_path.startswith(FOLDERS_A_BROWSER_MAY_KEEP) else None
+
+
 # Address, the page's name, and the file that holds it. The editor is not in this list: it has
 # two pages at one address, and which_editor.py chooses between them.
 PAGES = [
@@ -51,6 +64,6 @@ def create_pages(static_dir: Path) -> Blueprint:
     @pages.get("/static/<path:file_path>")
     def serve_static_file(file_path: str):
         # send_from_directory refuses any path that would leave static_dir.
-        return send_from_directory(static_dir, file_path)
+        return send_from_directory(static_dir, file_path, max_age=seconds_a_browser_may_keep(file_path))
 
     return pages

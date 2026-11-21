@@ -52,6 +52,28 @@ def test_browsers_are_told_to_check_for_newer_pages(client):
     assert client.get("/static/js/common/grid.js").headers["Cache-Control"] == "no-cache"
 
 
+@pytest.mark.parametrize("file_path", [
+    "backgrounds/soft-hills.jpg",
+    "backgrounds/forest.jpg",
+    "fonts/Outfit-Variable.woff2",
+])
+def test_browsers_may_keep_the_pictures_and_the_font_for_a_day(client, file_path):
+    # They are asked for on every page. Kept, they are there at once.
+    cache_control = client.get(f"/static/{file_path}").headers["Cache-Control"]
+    assert "max-age=86400" in cache_control
+    assert "no-cache" not in cache_control
+
+
+@pytest.mark.parametrize("file_path", [
+    "js/common/grid.js",
+    "js/editor_phone/phone_editor_main.js",
+    "css/editor_phone.css",
+    "editor_phone.html",
+])
+def test_browsers_still_ask_about_pages_styles_and_scripts_every_time(client, file_path):
+    assert client.get(f"/static/{file_path}").headers["Cache-Control"] == "no-cache"
+
+
 def test_browsers_are_told_never_to_store_api_answers(client):
     assert client.get("/api/layout").headers["Cache-Control"] == "no-store"
     assert client.get("/api/catalog").headers["Cache-Control"] == "no-store"

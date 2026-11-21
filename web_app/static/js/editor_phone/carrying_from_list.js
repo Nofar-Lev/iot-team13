@@ -7,7 +7,7 @@
 import { parseSize } from "../common/grid.js";
 import { createWidget } from "../display/widgets/index.js";
 import { defaultSettings } from "../editing/editor_state.js";
-import { shortBuzz, watchPresses } from "./press_and_hold.js";
+import { watchPresses } from "./press_and_hold.js";
 
 /**
  * Returns makeCarriable(row, catalogWidget, size): call it for every row of a list whose
@@ -21,7 +21,6 @@ export function createCarryingFromList({ state, carrying, catalog, demoData }) {
       mayHold: () => true,
 
       onHoldStart(event) {
-        shortBuzz();
         row.classList.add("widget-row--being-carried");
 
         // Under the finger: a copy of the row's small picture.
