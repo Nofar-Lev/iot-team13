@@ -1,14 +1,13 @@
-"""The phone editor, used in a real browser set up as a phone held sideways.
+"""The frame of the phone editor, used in a real browser set up as a phone held sideways:
+which editor a browser gets, the start screen, the preview with its grid, the arrows, the swipe
+and the dots between screens, and the main menu.
 
-So far the editor has its frame: the start screen, the preview with its grid, the arrows, the
-swipe and the dots between screens, and the panel with its main menu. Editing comes next.
+What the panel's screens do is tested in test_phone_editor_panel.py.
 """
 import pytest
 
 from browser_fixtures import COMMON_PHONE, LARGE_PHONE, PHONES, SMALL_PHONE, finger_swipe, sideways, upright
-
-playwright_api = pytest.importorskip("playwright.sync_api")
-expect = playwright_api.expect
+from phone_editor_helpers import expect, open_phone_editor, preview_point, shown_screen, widgets_on_preview
 
 DESKTOP = {"width": 1366, "height": 768}
 
@@ -19,30 +18,6 @@ SMALLEST_FINGER_TARGET = 44
 
 def name_of(phone: tuple) -> str:
     return f"{phone[1]}x{phone[0]}"
-
-
-def open_phone_editor(open_page, viewport=None, tap_open=True):
-    """The phone editor, as a phone gets it. With tap_open, already past the start screen."""
-    editor = open_page("/editor", viewport or sideways(COMMON_PHONE), as_phone=True)
-    editor.wait_for_selector("body[data-ready]")
-    if tap_open:
-        editor.locator("#open-editor-button").tap()
-        expect(editor.locator("#editing-screen")).to_be_visible()
-    return editor
-
-
-def widgets_on_preview(page):
-    return page.locator(".preview .display__widgets > .widget")
-
-
-def preview_point(page, across: float, down: float) -> tuple:
-    """A point of the preview: (0.5, 0.5) is its middle."""
-    box = page.locator(".preview .display-frame").bounding_box()
-    return box["x"] + box["width"] * across, box["y"] + box["height"] * down
-
-
-def shown_screen(page):
-    return page.locator("body")
 
 
 # --- Which editor a browser gets -----------------------------------------------------------------
@@ -236,7 +211,7 @@ def test_the_panel_shows_the_main_menu(open_page):
     panel = editor.locator("#panel")
     expect(panel).to_have_attribute("data-showing", "main-menu")
 
-    expect(panel.locator("#home-link")).to_have_text("Home")
+    expect(panel.locator("#home-button")).to_have_text("Home")
     expect(panel.locator("#add-widget-button")).to_have_text("Add widget")
     expect(panel.locator("#backgrounds-button")).to_have_text("Backgrounds")
     expect(panel.locator("#remove-screen-button")).to_have_text("Remove this screen")
@@ -255,7 +230,7 @@ def test_the_main_menu_fits_the_panel_and_its_buttons_fit_a_finger(open_page, ph
     viewport = sideways(phone)
     editor = open_phone_editor(open_page, viewport)
 
-    for button_id in ["home-link", "add-widget-button", "backgrounds-button", "remove-screen-button",
+    for button_id in ["home-button", "add-widget-button", "backgrounds-button", "remove-screen-button",
                       "discard-button", "save-button"]:
         box = editor.locator(f"#{button_id}").bounding_box()
         assert box["height"] >= SMALLEST_FINGER_TARGET, button_id
@@ -266,14 +241,6 @@ def test_the_main_menu_fits_the_panel_and_its_buttons_fit_a_finger(open_page, ph
 
 def test_home_leaves_the_editor_for_the_home_page(open_page):
     editor = open_phone_editor(open_page)
-    editor.locator("#home-link").tap()
+    editor.locator("#home-button").tap()
     editor.wait_for_url("**/")
     editor.wait_for_selector(".home-page")
-
-
-def test_a_button_whose_work_is_not_built_yet_says_so(open_page):
-    # Until the next step. Each of these buttons gets its real work, and its real test, there.
-    editor = open_phone_editor(open_page)
-    editor.locator("#add-widget-button").tap()
-    expect(editor.locator(".toast--showing")).to_contain_text("not built yet")
-    expect(widgets_on_preview(editor)).to_have_count(4)

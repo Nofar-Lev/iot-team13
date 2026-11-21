@@ -5,25 +5,36 @@
 //   preview.js               the picture of the display, with its grid, sized to the screen
 //   screen_navigation.js     the round arrows, the dots, and the swipe between screens
 //   screen_swipe.js          what counts as a swipe
+//   selection_by_tap.js      a tap on a widget selects it; a tap elsewhere lets go of it
 //   panel.js                 the panel on the right
-//   main_menu.js             what the panel shows while nothing is selected
+//   panel_router.js          which screen the panel shows
+//   main_menu.js             the panel while nothing is selected
+//   add_widget_screen.js     the list of widgets            (uses widget_rows.js)
+//   widget_sizes_screen.js   the sizes of one widget        (uses widget_rows.js)
+//   widget_options_screen.js the selected widget's settings
+//   backgrounds_screen.js    the backgrounds of the current screen
+//   saving.js, leaving.js    saving the layout; leaving with unsaved changes
 //
-// The rules of editing (../editing/editor_state.js) and the drawing of the display
-// (../display/) are the same ones the desktop editor uses.
+// The rules of editing, the settings form and the small widget pictures (../editing/) and the
+// drawing of the display (../display/) are the same ones the desktop editor uses.
 
+import { openLiveChannel } from "../common/live_channel.js";
 import { fetchCatalog, fetchDemoData, fetchSavedLayout } from "../common/server_api.js";
 import { showToast } from "../common/toast.js";
 import { createEditorState } from "../editing/editor_state.js";
-import { buildMainMenu } from "./main_menu.js";
+import { createAddWidgetScreen } from "./add_widget_screen.js";
+import { createBackgroundsScreen } from "./backgrounds_screen.js";
+import { guardUnsavedChanges } from "./leaving.js";
+import { createMainMenuScreen } from "./main_menu.js";
 import { createPanel } from "./panel.js";
+import { createPanelRouter } from "./panel_router.js";
 import { createPreview } from "./preview.js";
+import { createSaving } from "./saving.js";
 import { setUpScreenNavigation } from "./screen_navigation.js";
+import { setUpSelectionByTap } from "./selection_by_tap.js";
 import { setUpStartScreen } from "./start_screen.js";
-
-/** For the buttons whose work is not built yet. They say so, and do nothing else. */
-function notBuiltYet(what) {
-  return () => showToast(`${what} is not built yet.`);
-}
+import { createWidgetOptionsScreen } from "./widget_options_screen.js";
+import { createWidgetSizesScreen } from "./widget_sizes_screen.js";
 
 async function startPhoneEditor() {
   // The start screen works from the first moment, before anything is fetched.
@@ -38,13 +49,25 @@ async function startPhoneEditor() {
 
   // --- The preview ------------------------------------------------------------------------------
 
-  const previewHolder = document.getElementById("preview");
   const displayView = createPreview({
     catalog,
     demoData,
-    holder: previewHolder,
+    holder: document.getElementById("preview"),
     room: document.getElementById("preview-room"),
   });
+
+  function markSelectedWidget() {
+    const selectedIndex = state.selectedIndex();
+    displayView.widgetElements().forEach((element, index) => {
+      element.classList.toggle("widget--selected", index === selectedIndex);
+    });
+  }
+
+  function drawCurrentScreen() {
+    displayView.showScreen(state.currentScreen());
+    markSelectedWidget();
+    document.body.dataset.screen = String(state.screenIndex());
+  }
 
   setUpScreenNavigation({
     state,
@@ -52,34 +75,72 @@ async function startPhoneEditor() {
     nextButton: document.getElementById("next-screen-button"),
     dots: document.getElementById("screen-dots"),
     swipeArea: displayView.frame,
-    onAddScreen: notBuiltYet("Adding a screen"),
+    onAddScreen: () => state.addScreen(),
   });
+
+  // --- Saving, and whether a display is connected to hear about it --------------------------------
+
+  let displayIsOnline = false;
+  openLiveChannel({
+    role: "editor",
+    onNews(name, details) {
+      if (name === "hello") displayIsOnline = details.display_online;
+      if (name === "display") displayIsOnline = details.online;
+    },
+  });
+  const saving = createSaving({ state, isDisplayOnline: () => displayIsOnline });
+  const unsavedChangesGuard = guardUnsavedChanges(state);
 
   // --- The panel --------------------------------------------------------------------------------
 
   const panel = createPanel(document.getElementById("panel"));
-  const mainMenu = buildMainMenu({
+  // The screens need the router (to move between one another), and the router needs the
+  // screens. So the screens are given functions that look the router up when they are called.
+  let router = null;
+  const backToMainMenu = () => router.backToMainMenu();
+
+  router = createPanelRouter({
     state,
-    onAddWidget: notBuiltYet("Adding a widget"),
-    onBackgrounds: notBuiltYet("Choosing a background"),
-    onRemoveScreen: notBuiltYet("Removing a screen"),
-    onSave: notBuiltYet("Saving"),
-    onDiscard: notBuiltYet("Discarding"),
+    screens: {
+      mainMenu: createMainMenuScreen({
+        panel,
+        state,
+        onAddWidget: () => router.openAddWidget(),
+        onBackgrounds: () => router.openBackgrounds(),
+        onSave: () => saving.save(),
+        onGoHome: () => unsavedChangesGuard.leaveTo("/"),
+      }),
+      addWidget: createAddWidgetScreen({
+        panel,
+        state,
+        catalog,
+        demoData,
+        onBack: backToMainMenu,
+        onChooseSizes: (widgetType) => router.openWidgetSizes(widgetType),
+      }),
+      widgetSizes: createWidgetSizesScreen({ panel, state, catalog, demoData, onBack: () => router.openAddWidget() }),
+      widgetOptions: createWidgetOptionsScreen({ panel, state, onBack: backToMainMenu }),
+      backgrounds: createBackgroundsScreen({ panel, state, catalog, onBack: backToMainMenu }),
+    },
   });
-  panel.show("main-menu", mainMenu.parts);
 
-  // --- Keeping everything in step with the state ------------------------------------------------
+  setUpSelectionByTap({
+    stage: document.getElementById("stage"),
+    previewFrame: displayView.frame,
+    state,
+    onTapOutside: backToMainMenu,
+  });
 
-  function drawCurrentScreen() {
-    displayView.showScreen(state.currentScreen());
-    document.body.dataset.screen = String(state.screenIndex());
-  }
+  // --- Keeping the preview in step with the state -------------------------------------------------
 
-  state.subscribe(() => {
-    drawCurrentScreen();
-    mainMenu.refresh();
+  state.subscribe((kindOfChange) => {
+    // A change of selection only moves the ring. The widgets are not drawn again: a finger
+    // may be on one of them.
+    if (kindOfChange === "selection") markSelectedWidget();
+    else drawCurrentScreen();
   });
   drawCurrentScreen();
+  router.showWhatApplies();
 
   document.body.dataset.ready = "true";
 }

@@ -94,6 +94,11 @@ export function createEditorState({ catalog, savedLayout }) {
     return canPlace(grid, currentScreen().widgets, { size, col, row }, movingIndex);
   }
 
+  /** Is there a free place on the current screen for a widget of this size? */
+  function hasRoomFor(size) {
+    return firstFreePlace(grid, currentScreen().widgets, size) !== null;
+  }
+
   /** Add a widget with default settings and select it. Returns false if it does not fit. */
   function addWidget(type, size, col, row) {
     const catalogWidget = catalogWidgets.get(type);
@@ -186,6 +191,7 @@ export function createEditorState({ catalog, savedLayout }) {
     setBackground,
 
     canPlaceWidget,
+    hasRoomFor,
     addWidget,
     addWidgetAnywhere,
     moveWidget,

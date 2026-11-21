@@ -115,6 +115,17 @@
   pointer-events: none;
 }
 
+/* The ring around the selected widget: white with an accent edge, so it shows on any picture. */
+.preview .widget--selected::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 2px solid #ffffff;
+  border-radius: 17px;
+  box-shadow: 0 0 0 2px var(--accent), inset 0 0 0 1px rgba(79, 91, 213, 0.6);
+  pointer-events: none;
+}
+
 /* --- Moving between screens ------------------------------------------------------------------ */
 
 /* A round button on the middle of each side edge of the preview, half over it. */
@@ -235,10 +246,52 @@
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 0 4px;
+  padding: 0 6px 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   color: var(--ink-soft);
   font-weight: 500;
-  text-decoration: none;
+}
+
+/* The top line of every other screen: a Back arrow and the screen's name, as one button. */
+.panel__back {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  text-align: left;
+}
+
+.panel__back .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.panel__back-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel__top-note {
+  flex: none;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.panel__hint {
+  flex: none;
+  margin: 0 2px 2px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
 }
 
 .panel__home .icon {
@@ -312,7 +365,9 @@
 }
 
 .foot-button--discard {
-  flex: 0 0 68px;
+  flex: 0 0 auto;
+  min-width: 68px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink-soft);
@@ -327,6 +382,221 @@
 
 .foot-button:disabled {
   opacity: 0.4;
+}
+
+/* A button that is asking for a second tap before it throws something away: a muted maroon.
+   (base.css gives the class its usual, redder look; the phone editor's is quieter.) */
+.phone-editor .panel .button--danger {
+  border-color: transparent;
+  background: #f5e6e4;
+  color: #8a3536;
+}
+
+.phone-editor .panel .button--danger .icon {
+  color: inherit;
+}
+
+/* --- The lists of widgets and of sizes ---------------------------------------------------------- */
+
+.widget-row {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #faf9f7;
+  text-align: left;
+}
+
+.widget-row__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.widget-row__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.widget-row__note {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* A widget that has no room on this screen. It still answers a tap, with a message. */
+.widget-row--no-room {
+  opacity: 0.42;
+}
+
+/* A small picture of a widget. Its box has a soft backdrop, so that the see-through panels
+   look the way they do on the display. */
+.widget-picture {
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.widget-picture__box {
+  background: linear-gradient(135deg, #50668f, #94829d 60%, #c59a8c);
+}
+
+/* --- The backgrounds ---------------------------------------------------------------------------- */
+
+.swatches {
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+/* A slice of the background's picture, with its name on it. */
+.swatch {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 9px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #26324a center / cover no-repeat;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.swatch--current {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* --- A widget's options -------------------------------------------------------------------------- */
+
+/* The form is built by editing/widget_settings_form.js, which the desktop editor uses too.
+   Its look here is the phone's own: everything is large enough for a finger. */
+
+/* The form's own title is not shown: the panel's top line already says which widget it is. */
+.settings__title {
+  display: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.field--toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.field__label {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.field__input,
+.field__select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  /* 16 units or more: below that, phones zoom the page in when the box is tapped. */
+  font-size: 16px;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.field__input:focus,
+.field__select:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-soft);
+}
+
+.field__input--invalid,
+.field__input--invalid:focus {
+  border-color: var(--danger);
+  outline-color: var(--danger-soft);
+}
+
+/* A choice shown as a row of buttons, one of them chosen. */
+.choice-row {
+  display: flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: #efede8;
+}
+
+.choice-row__button {
+  flex: 1;
+  min-height: 40px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.choice-row__button--chosen {
+  background: var(--surface);
+  color: var(--phone-ink);
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgba(30, 34, 51, 0.14);
+}
+
+/* An on/off switch, made from a checkbox. */
+.switch {
+  position: relative;
+  flex: none;
+  width: 50px;
+  height: 30px;
+  margin: 0;
+  border-radius: 999px;
+  background: #cfcbc2;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 0.14s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.14s;
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::after {
+  transform: translateX(20px);
+}
+
+/* "Remove widget", under the options: bold and grey, like "Remove this screen". */
+.settings__remove {
+  min-height: 44px;
+  margin-top: 2px;
+  padding-left: 4px;
+  font-size: 14.5px;
+  font-weight: 600;
 }
 
 /* --- The phone held upright --------------------------------------------------------------------- */

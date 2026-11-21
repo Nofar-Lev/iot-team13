@@ -11,7 +11,7 @@ There is no hardware yet, so a web page plays the part of the device.
 | Page | Address | What it is |
 |---|---|---|
 | Home | `/` | A picture of what the display shows now, whether the display is connected, and an Edit button. Its other sections are marked **Sample**: they show example data and are not built yet |
-| Editor | `/editor` | The display on a 6x4 grid. Drag widgets from the list, move them, change their settings, choose a background per screen, add and remove screens, then Save. A desktop browser gets the desktop editor. A phone gets the phone editor, which is being built: so far it shows the display and moves between its screens |
+| Editor | `/editor` | The display on a 6x4 grid. Drag widgets from the list, move them, change their settings, choose a background per screen, add and remove screens, then Save. A desktop browser gets the desktop editor. A phone gets the phone editor, made for a phone held sideways: it adds and removes widgets and screens, changes settings and backgrounds, and saves. Moving a widget on a phone is still being built |
 | Device | `/device` | A stand-in for the real display, meant for a phone held sideways. It redraws by itself when a layout is saved, and a small icon shows whether it is connected |
 
 What is real and what is not:
@@ -118,9 +118,9 @@ The editor's list, the settings form and the server's checks pick it up from the
 | `static/css/` | Styles: `display.css` for the display and its widgets, `base.css` for what the pages share, and one file per page |
 | `static/js/common/` | Shared by the pages: talking to the server, the live channel, grid arithmetic, icons |
 | `static/js/display/` | The drawing module, with one file per widget in `widgets/` |
-| `static/js/editing/` | The rules of editing a layout, shared by the desktop editor and the phone editor |
+| `static/js/editing/` | What the desktop editor and the phone editor share: the rules of editing a layout, the form of a widget's settings, and the small pictures of widgets |
 | `static/js/editor/` | The desktop editor: the widget list, dragging, screens, settings, backgrounds, saving |
-| `static/js/editor_phone/` | The phone editor: the start screen and full screen, the preview, moving between screens, the panel and its main menu |
+| `static/js/editor_phone/` | The phone editor: the start screen and full screen, the preview, moving between screens, selecting by a tap, the panel and its screens (main menu, list of widgets, sizes, a widget's options, backgrounds), saving |
 | `static/js/device/` | The device page: connection icon, switching screens, full screen |
 | `static/js/home/` | The home page: the display card (real) and the sample sections |
 | `static/backgrounds/` | The six background pictures, 480x320 |

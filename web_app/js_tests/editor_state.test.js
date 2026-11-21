@@ -86,6 +86,27 @@ test("adding anywhere uses the first free place", () => {
   assert.deepEqual([stock.col, stock.row], [4, 0]);
 });
 
+test("there is room for a size exactly when a widget of that size can be added anywhere", () => {
+  // The default layout's first screen has free cells, but no free block of 4x2 or of 2x2.
+  const { state } = newState(defaultLayout);
+  assert.equal(state.hasRoomFor("2x1"), true);
+  assert.equal(state.hasRoomFor("2x2"), false);
+  assert.equal(state.hasRoomFor("4x2"), false);
+  assert.equal(state.addWidgetAnywhere("weather", "2x2"), false);
+  assert.equal(state.addWidgetAnywhere("date", "2x1"), true);
+
+  // An empty screen has room for every size.
+  const empty = newState().state;
+  for (const size of ["2x1", "2x2", "4x2"]) assert.equal(empty.hasRoomFor(size), true);
+});
+
+test("asking whether there is room changes nothing", () => {
+  const { state, changes } = newState(defaultLayout);
+  state.hasRoomFor("2x1");
+  assert.deepEqual(changes, []);
+  assert.equal(state.hasUnsavedChanges(), false);
+});
+
 test("adding anywhere fails when the screen has no room", () => {
   const { state } = newState();
   state.addWidget("clock", "4x2", 0, 0);
