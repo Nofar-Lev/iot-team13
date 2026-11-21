@@ -21,6 +21,10 @@ from server.app import create_app  # noqa: E402
 from server.config import ServerConfig  # noqa: E402
 from server.widget_catalog import WidgetCatalog  # noqa: E402
 
+# The fixtures of the browser tests: the real server as a separate program, and browser windows.
+# Importing them here is what lets every test file use them.
+from browser_fixtures import browser, open_page, server  # noqa: E402, F401
+
 
 @pytest.fixture
 def config(tmp_path):
