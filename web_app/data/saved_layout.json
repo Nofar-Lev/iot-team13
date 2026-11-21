@@ -1,0 +1,162 @@
+{
+  "revision": 5,
+  "saved_at": "2026-11-17T12:13:09+00:00",
+  "layout": {
+    "grid": {
+      "columns": 6,
+      "rows": 4
+    },
+    "screens": [
+      {
+        "background": "soft-hills",
+        "widgets": [
+          {
+            "col": 1,
+            "row": 0,
+            "settings": {
+              "format": "24h",
+              "offset_minutes": 0,
+              "show_seconds": false,
+              "time_mode": "automatic"
+            },
+            "size": "4x2",
+            "type": "clock"
+          },
+          {
+            "col": 2,
+            "row": 2,
+            "settings": {
+              "style": "long"
+            },
+            "size": "2x1",
+            "type": "date"
+          },
+          {
+            "col": 0,
+            "row": 3,
+            "settings": {
+              "city": "Haifa",
+              "units": "celsius"
+            },
+            "size": "2x1",
+            "type": "weather"
+          },
+          {
+            "col": 4,
+            "row": 3,
+            "settings": {
+              "units": "celsius"
+            },
+            "size": "2x1",
+            "type": "room_climate"
+          }
+        ]
+      },
+      {
+        "background": "calm-sea",
+        "widgets": [
+          {
+            "col": 0,
+            "row": 0,
+            "settings": {},
+            "size": "4x2",
+            "type": "reminders"
+          },
+          {
+            "col": 4,
+            "row": 0,
+            "settings": {
+              "format": "24h",
+              "offset_minutes": 0,
+              "show_seconds": false,
+              "time_mode": "automatic"
+            },
+            "size": "2x1",
+            "type": "clock"
+          },
+          {
+            "col": 0,
+            "row": 2,
+            "settings": {
+              "city": "Haifa",
+              "units": "celsius"
+            },
+            "size": "2x2",
+            "type": "weather"
+          },
+          {
+            "col": 2,
+            "row": 2,
+            "settings": {
+              "symbol": "NVDA"
+            },
+            "size": "2x1",
+            "type": "stock"
+          },
+          {
+            "col": 2,
+            "row": 3,
+            "settings": {
+              "from": "USD",
+              "to": "ILS"
+            },
+            "size": "2x1",
+            "type": "exchange_rate"
+          }
+        ]
+      },
+      {
+        "background": "morning-mist",
+        "widgets": [
+          {
+            "col": 4,
+            "row": 1,
+            "settings": {
+              "symbol": "NVDA"
+            },
+            "size": "2x1",
+            "type": "stock"
+          },
+          {
+            "col": 0,
+            "row": 1,
+            "settings": {},
+            "size": "4x2",
+            "type": "reminders"
+          },
+          {
+            "col": 4,
+            "row": 0,
+            "settings": {
+              "symbol": "APL"
+            },
+            "size": "2x1",
+            "type": "stock"
+          },
+          {
+            "col": 0,
+            "row": 0,
+            "settings": {
+              "format": "12h",
+              "offset_minutes": 0,
+              "show_seconds": true,
+              "time_mode": "automatic"
+            },
+            "size": "2x1",
+            "type": "clock"
+          },
+          {
+            "col": 2,
+            "row": 0,
+            "settings": {
+              "style": "short"
+            },
+            "size": "2x1",
+            "type": "date"
+          }
+        ]
+      }
+    ],
+    "version": 1
+  }
+}
