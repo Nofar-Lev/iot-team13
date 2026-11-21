@@ -9,19 +9,20 @@
 // Each set is a folder next to this file.
 const PICTURE_SETS = [
   { width: 780, height: 360 },
-  { width: 824, height: 384 },
+  { width: 832, height: 384 },
   { width: 915, height: 412 },
 ];
 
 // The pictures of one set, in the order they are shown.
 const PICTURES = [
-  { file: "1-editing-screen.jpg", title: "The editing screen" },
-  { file: "2-add-menu.jpg", title: "Add widget: the menu" },
-  { file: "3-size-choice.jpg", title: "Add widget: the clock's sizes" },
-  { file: "4-settings.jpg", title: "Settings of the weather widget" },
-  { file: "4b-settings-clock.jpg", title: "Settings of the clock" },
-  { file: "5-background.jpg", title: "Background" },
-  { file: "6-hold-and-move.jpg", title: "A held widget being moved" },
+  { file: "01-main-menu.jpg", title: "The editing screen, with the main menu" },
+  { file: "02-last-screen-add-arrow.jpg", title: "The last screen: the right arrow adds a screen" },
+  { file: "03-add-a-widget.jpg", title: "Add a widget: tap to add, hold to carry" },
+  { file: "04-clock-sizes.jpg", title: "The clock's sizes" },
+  { file: "05-widget-options.jpg", title: "A widget's options, with Back" },
+  { file: "06-backgrounds.jpg", title: "Backgrounds" },
+  { file: "07-holding-a-widget.jpg", title: "A held widget: the panel shows its options" },
+  { file: "08-remove-screen-asks.jpg", title: "Remove this screen, after the first tap" },
 ];
 
 // How long the caption stays before it fades.
