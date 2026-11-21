@@ -61,6 +61,17 @@ const ICONS = {
     shapes: `<rect x="9" y="3" width="6" height="11" rx="3" ${LINE}/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" ${LINE}/>`,
   },
   full_screen: { box: 24, shapes: `<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" ${LINE}/>` },
+  home: { box: 24, shapes: `<path d="M4 11l8-7 8 7M6 10v9h12v-9" ${LINE}/>` },
+  // A framed picture: a sun and a line of hills. Its lines are thinner than the other icons',
+  // and the hills do not touch the frame, so that the three shapes stay apart at small sizes.
+  backgrounds: {
+    box: 24,
+    shapes: `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+               <rect x="2.2" y="3.8" width="19.6" height="16.4" rx="3.4"/>
+               <circle cx="7.9" cy="8.9" r="1.6"/>
+               <path d="M5.6 16.6l3.5-3.3 2.7 2.3 4-4.4 2.9 3.3"/>
+             </g>`,
+  },
 };
 
 /** A new picture element. Its size and colour come from the page's styles. */

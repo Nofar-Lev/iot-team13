@@ -11,7 +11,7 @@ There is no hardware yet, so a web page plays the part of the device.
 | Page | Address | What it is |
 |---|---|---|
 | Home | `/` | A picture of what the display shows now, whether the display is connected, and an Edit button. Its other sections are marked **Sample**: they show example data and are not built yet |
-| Editor | `/editor` | The display on a 6x4 grid. Drag widgets from the list, move them, change their settings, choose a background per screen, add and remove screens, then Save. Made for a desktop browser |
+| Editor | `/editor` | The display on a 6x4 grid. Drag widgets from the list, move them, change their settings, choose a background per screen, add and remove screens, then Save. A desktop browser gets the desktop editor. A phone gets the phone editor, which is being built: so far it shows the display and moves between its screens |
 | Device | `/device` | A stand-in for the real display, meant for a phone held sideways. It redraws by itself when a layout is saved, and a small icon shows whether it is connected |
 
 What is real and what is not:
@@ -97,7 +97,7 @@ The editor's list, the settings form and the server's checks pick it up from the
 
 | Address | What it does |
 |---|---|
-| `/`, `/editor`, `/device` | The three pages |
+| `/`, `/editor`, `/device` | The three pages. `/editor` is the desktop editor or the phone editor, by the kind of browser; `/editor?view=phone` and `/editor?view=desktop` choose by hand |
 | `/static/...` | The files the pages load |
 | `GET /api/catalog` | The widget catalog: widgets, grid, backgrounds |
 | `GET /api/layout` | The saved layout, its revision number and when it was saved |
@@ -114,17 +114,19 @@ The editor's list, the settings form and the server's checks pick it up from the
 | `data/widget_catalog.json` | The widgets, the grid and the backgrounds |
 | `data/default_layout.json` | The layout shown before anything was saved |
 | `data/demo_data.json` | **Example data only.** Stands in for the real data sources until they exist |
-| `static/home.html`, `editor.html`, `device.html` | The three pages |
+| `static/home.html`, `editor.html`, `editor_phone.html`, `device.html` | The pages. The editor has two: one for a desktop, one for a phone |
 | `static/css/` | Styles: `display.css` for the display and its widgets, `base.css` for what the pages share, and one file per page |
 | `static/js/common/` | Shared by the pages: talking to the server, the live channel, grid arithmetic, icons |
 | `static/js/display/` | The drawing module, with one file per widget in `widgets/` |
-| `static/js/editor/` | The editor: its state and rules, the widget list, dragging, screens, settings, backgrounds, saving |
+| `static/js/editing/` | The rules of editing a layout, shared by the desktop editor and the phone editor |
+| `static/js/editor/` | The desktop editor: the widget list, dragging, screens, settings, backgrounds, saving |
+| `static/js/editor_phone/` | The phone editor: the start screen and full screen, the preview, moving between screens, the panel and its main menu |
 | `static/js/device/` | The device page: connection icon, switching screens, full screen |
 | `static/js/home/` | The home page: the display card (real) and the sample sections |
 | `static/backgrounds/` | The six background pictures, 480x320 |
 | `static/fonts/` | The display's font, Outfit, with its licence (SIL Open Font License) |
 | `tools/make_backgrounds.py` | The script that drew the backgrounds (needs Pillow and numpy; only run it to change a picture) |
-| `tests/` | Tests for the server, and tests that drive the pages in a browser |
+| `tests/` | Tests for the server, and tests that drive the pages in a browser, as a desktop and as a phone (`browser_fixtures.py` holds what they share) |
 | `js_tests/` | Tests for the logic of the pages: the grid, the editor's state, time and units |
 | `package.json` | Only tells Node that the `.js` files are modules. There are no packages to install |
 
@@ -141,7 +143,8 @@ That runs three kinds of test:
 - **The pages' logic tests** (`js_tests/`). They need Node.js and are skipped without it.
   They can also be run alone: `node --test js_tests/`.
 - **Tests that use the pages in a real browser**: dragging, saving, watching the device page
-  redraw, stopping and restarting the server. They need Playwright and are skipped without it:
+  redraw, stopping and restarting the server, and the home page opened as a phone, upright and
+  sideways. They need Playwright and are skipped without it:
 
   ```
   py -m pip install playwright

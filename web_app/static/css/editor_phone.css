@@ -1,0 +1,351 @@
+/* The phone editor: the preview of the display on the left, one panel on the right.
+   Made for a phone held sideways, in full screen. Nothing on the editing screen scrolls,
+   except lists inside the panel.
+
+   The desktop editor has its own file, editor.css. The two share display.css (how the display
+   and its widgets look) and base.css (colours, buttons, messages). */
+
+.phone-editor {
+  /* The dark text of the phone editor: a little softer than the rest of the app's. */
+  --phone-ink: #3d4359;
+  /* How much of each short edge the phone's camera cut-out takes. The browser fills these in;
+     where there is no cut-out they are zero. */
+  --clear-of-camera-left: env(safe-area-inset-left, 0px);
+  --clear-of-camera-right: env(safe-area-inset-right, 0px);
+
+  height: 100vh;
+  height: 100dvh;   /* the part of the screen that is really visible, where a browser knows it */
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;   /* a quick second tap is a tap, not a zoom */
+}
+
+/* --- The start screen ------------------------------------------------------------------------ */
+
+.start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
+.start__title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.start__text {
+  max-width: 280px;
+  color: var(--ink-soft);
+}
+
+.start__button {
+  min-height: 48px;
+  padding: 12px 26px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.start__home {
+  padding: 8px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+/* --- The editing screen ---------------------------------------------------------------------- */
+
+.editing {
+  position: relative;
+  display: flex;
+  height: 100%;
+}
+
+/* The preview's side: everything left of the panel. */
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  /* Left: clear of the camera. Both sides: room for the half of each arrow that sticks out
+     of the preview. Top: a little air. */
+  padding: 8px 24px 0 calc(var(--clear-of-camera-left) + 24px);
+}
+
+/* The room the preview may fill. The preview is made as large as fits in here. */
+.preview-room {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The preview is exactly as large as the display's picture, so that the arrows can be
+   attached to its edges. */
+.preview {
+  position: relative;
+  flex: none;
+  /* Every touch on the preview is the page's to read (a swipe, a hold). The browser must not
+     take one for a scroll of its own. */
+  touch-action: none;
+}
+
+.preview .display-frame {
+  border-radius: 12px;
+  box-shadow: 0 6px 22px rgba(30, 34, 51, 0.25);
+}
+
+/* The grid: one layer behind the widgets, always visible and faint. It is the surface that
+   every widget sits on, so its lines never cross a widget. */
+.preview-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.34) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.34) 1px, transparent 1px);
+  background-size: var(--cell-size, 80px) var(--cell-size, 80px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* --- Moving between screens ------------------------------------------------------------------ */
+
+/* A round button on the middle of each side edge of the preview, half over it. */
+.preview__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-top: -18px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--phone-ink);
+  box-shadow: 0 2px 8px rgba(30, 34, 51, 0.18);
+}
+
+/* What is seen is 36 units across; what a finger can hit is 48. */
+.preview__arrow::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.preview__arrow--previous { left: -18px; }
+.preview__arrow--next { right: -18px; }
+
+.preview__arrow .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.preview__arrow:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+/* On the last screen the right arrow adds a screen. */
+.preview__arrow--adds-a-screen {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* One dot per screen, under the preview. */
+.screen-dots {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 16px;
+}
+
+.screen-dots__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cfcbc2;
+}
+
+.screen-dots__dot--current {
+  background: var(--accent);
+}
+
+/* --- The panel -------------------------------------------------------------------------------- */
+
+/* Always there, on the right. It shows the main menu, or the options of what is selected. */
+.panel {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: calc(208px + var(--clear-of-camera-right));
+  min-height: 0;
+  padding-right: var(--clear-of-camera-right);
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--phone-ink);
+}
+
+.panel__top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 46px;   /* room for a 44-unit target and the line under it */
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.panel__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+/* Save layout and Discard. They belong to the main menu and to nothing else. */
+.panel__foot {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--line);
+  background: #f6f4f0;
+}
+
+/* The house at the top of the main menu: back to the home page. */
+.panel__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--ink-soft);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.panel__home .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--phone-ink);
+}
+
+/* --- The main menu ----------------------------------------------------------------------------- */
+
+/* The two large buttons: Add widget, Backgrounds. */
+.menu-button {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  height: 54px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #faf9f7;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.menu-button .icon {
+  width: 30px;
+  height: 30px;
+  color: var(--accent);
+}
+
+.panel__spacer {
+  flex: 1;
+}
+
+/* An action that is not a main one: bold and grey. */
+.quiet-action {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.quiet-action .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.quiet-action:disabled {
+  opacity: 0.4;
+}
+
+.foot-button {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  padding: 0 6px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.foot-button--discard {
+  flex: 0 0 68px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.foot-button--save {
+  flex: 1;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.foot-button:disabled {
+  opacity: 0.4;
+}
+
+/* --- The phone held upright --------------------------------------------------------------------- */
+
+/* The editor is made for a phone held sideways. Where the browser cannot turn the picture by
+   itself, this covers the editing screen until the phone is turned. */
+.turn-message {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  place-items: center;
+  background: var(--page);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+@media (orientation: portrait) {
+  .turn-message {
+    display: grid;
+  }
+}

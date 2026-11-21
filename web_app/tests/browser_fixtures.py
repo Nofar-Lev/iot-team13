@@ -135,3 +135,26 @@ def open_page(browser, server):
     for context in contexts:
         context.close()
     assert page_errors == []
+
+
+# --- A finger on a phone's screen ----------------------------------------------------------------
+
+def finger_swipe(page, start: tuple, end: tuple, steps: int = 8) -> None:
+    """Put a finger down at start, move it to end, and lift it, as real touches.
+
+    Playwright's own mouse makes mouse events. A phone makes touch events, which the browser
+    treats differently (it may take them for a scroll), so the phone tests use real touches.
+    They are sent through the browser's debugging channel, which only Chromium has.
+    """
+    channel = page.context.new_cdp_session(page)
+
+    def touch(kind: str, points: list) -> None:
+        channel.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": points})
+
+    touch("touchStart", [{"x": start[0], "y": start[1]}])
+    for step in range(1, steps + 1):
+        x = start[0] + (end[0] - start[0]) * step / steps
+        y = start[1] + (end[1] - start[1]) * step / steps
+        touch("touchMove", [{"x": x, "y": y}])
+    touch("touchEnd", [])
+    channel.detach()

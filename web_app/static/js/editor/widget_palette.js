@@ -5,7 +5,7 @@ import { el } from "../common/dom.js";
 import { parseSize } from "../common/grid.js";
 import { setDisplayZoom } from "../display/scale_to_fit.js";
 import { createWidget } from "../display/widgets/index.js";
-import { defaultSettings } from "./editor_state.js";
+import { defaultSettings } from "../editing/editor_state.js";
 
 // The small pictures are drawn at this share of the display's real size.
 const PICTURE_ZOOM = 0.5;

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover: the page may use the whole screen, and is told how much of each
+       edge the phone's camera cut-out takes, so that nothing is put under it. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f1ed">
+  <title>Smart Screen: display editor</title>
+  <link rel="stylesheet" href="/static/css/display.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/editor_phone.css">
+  <script type="module" src="/static/js/editor_phone/phone_editor_main.js"></script>
+</head>
+<body class="phone-editor">
+  <!-- The display editor for a phone. It is a different page from the desktop editor
+       (editor.html); the server sends this one to phones. The two share the rules of editing
+       and the drawing of the display, and nothing else. -->
+
+  <!-- Shown first, and again after leaving full screen. A page may only go full screen after
+       a tap, so the editor starts with one button. -->
+  <main class="start" id="start-screen">
+    <h1 class="start__title">Display editor</h1>
+    <p class="start__text">The editor uses the whole screen, with the phone held sideways.</p>
+    <button class="button button--primary start__button" id="open-editor-button" type="button">Open the editor</button>
+    <a class="start__home" href="/">&lsaquo; Back to home</a>
+  </main>
+
+  <!-- The editing screen: the preview of the display on the left, one panel on the right.
+       Nothing here scrolls, except lists inside the panel. -->
+  <div class="editing" id="editing-screen" hidden>
+    <section class="stage">
+      <div class="preview-room" id="preview-room">
+        <!-- The preview and the two round arrows attached to its side edges. -->
+        <div class="preview" id="preview">
+          <button class="preview__arrow preview__arrow--previous" id="previous-screen-button" type="button"></button>
+          <button class="preview__arrow preview__arrow--next" id="next-screen-button" type="button"></button>
+        </div>
+      </div>
+      <div class="screen-dots" id="screen-dots"></div>
+    </section>
+
+    <aside class="panel" id="panel"></aside>
+
+    <!-- Covers the editing screen while the phone is held upright. -->
+    <p class="turn-message">Turn your phone sideways</p>
+  </div>
+</body>
+</html>

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { createEditorState, defaultSettings } from "../static/js/editor/editor_state.js";
+import { createEditorState, defaultSettings } from "../static/js/editing/editor_state.js";
 
 const readData = (name) => JSON.parse(readFileSync(new URL(`../data/${name}`, import.meta.url), "utf-8"));
 const catalog = readData("widget_catalog.json");
