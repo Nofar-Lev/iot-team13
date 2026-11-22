@@ -1,3 +1,6 @@
+// Shared by the desktop editor and the phone editor: the rules of editing are the same for
+// both, so they are written once, here.
+//
 // What the editor is working on: the layout being edited, which screen is showing, and which
 // widget is selected. Every change to the layout goes through this file, so the rules (inside
 // the grid, no overlaps, a limited number of screens) are kept in one place.
@@ -89,6 +92,11 @@ export function createEditorState({ catalog, savedLayout }) {
   /** May a widget of this size sit here? movingIndex names the widget being moved, if any. */
   function canPlaceWidget(size, col, row, movingIndex = -1) {
     return canPlace(grid, currentScreen().widgets, { size, col, row }, movingIndex);
+  }
+
+  /** Is there a free place on the current screen for a widget of this size? */
+  function hasRoomFor(size) {
+    return firstFreePlace(grid, currentScreen().widgets, size) !== null;
   }
 
   /** Add a widget with default settings and select it. Returns false if it does not fit. */
@@ -183,6 +191,7 @@ export function createEditorState({ catalog, savedLayout }) {
     setBackground,
 
     canPlaceWidget,
+    hasRoomFor,
     addWidget,
     addWidgetAnywhere,
     moveWidget,

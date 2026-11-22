@@ -1,0 +1,7 @@
+# The layout the user saved while running the server. It is created on the first Save.
+data/saved_layout.json
+data/saved_layout.tmp
+
+# Files Python and pytest create while running.
+__pycache__/
+.pytest_cache/

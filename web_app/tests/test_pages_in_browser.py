@@ -3,112 +3,22 @@
 These tests start the real server as a separate program (on this machine only, saving into a
 temporary folder), open the pages in a browser without a window, and click, drag and type.
 
-They need the Playwright package and its Chromium browser:
-
-    python3 -m pip install playwright
-    python3 -m playwright install chromium
-
-Where those are not installed, the tests are skipped.
+The server and the browser windows come from browser_fixtures.py, which also says what has to
+be installed. Where it is not installed, the tests are skipped.
 """
 import json
 import re
-import socket
-import subprocess
-import sys
-import time
-import urllib.request
-from pathlib import Path
 
 import pytest
 
 playwright_api = pytest.importorskip("playwright.sync_api")
 expect = playwright_api.expect
 
-TESTS_DIR = Path(__file__).resolve().parent
 DESKTOP = {"width": 1366, "height": 768}
 PHONE_HELD_SIDEWAYS = {"width": 800, "height": 360}
 
 
 # --- Helpers -----------------------------------------------------------------------------------
-
-class RunningServer:
-    """The real server, as a separate program that a test can stop and start again."""
-
-    def __init__(self, saved_layout_path: Path):
-        self.saved_layout_path = saved_layout_path
-        self.port = self._free_port()
-        self.address = f"http://127.0.0.1:{self.port}"
-        self._process = None
-
-    @staticmethod
-    def _free_port() -> int:
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", 0))
-            return probe.getsockname()[1]
-
-    def start(self) -> None:
-        self._process = subprocess.Popen(
-            [sys.executable, str(TESTS_DIR / "serve_with_temporary_data.py"),
-             str(self.port), str(self.saved_layout_path)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        deadline = time.monotonic() + 15
-        while time.monotonic() < deadline:
-            try:
-                self.read_layout()
-                return
-            except OSError:
-                time.sleep(0.1)
-        raise RuntimeError("The test server did not start")
-
-    def stop(self) -> None:
-        if self._process is not None:
-            self._process.terminate()
-            self._process.wait(timeout=10)
-            self._process = None
-
-    def read_layout(self) -> dict:
-        with urllib.request.urlopen(f"{self.address}/api/layout", timeout=2) as answer:
-            return json.load(answer)
-
-
-@pytest.fixture(scope="module")
-def browser():
-    with playwright_api.sync_playwright() as playwright:
-        try:
-            launched = playwright.chromium.launch()
-        except playwright_api.Error:
-            pytest.skip("Playwright's Chromium browser is not installed")
-        yield launched
-        launched.close()
-
-
-@pytest.fixture
-def server(tmp_path):
-    running = RunningServer(tmp_path / "saved_layout.json")
-    running.start()
-    yield running
-    running.stop()
-
-
-@pytest.fixture
-def open_page(browser, server):
-    """Opens one of the pages in its own browser window. Fails the test on any page error."""
-    contexts, page_errors = [], []
-
-    def open_it(address: str, viewport: dict):
-        context = browser.new_context(viewport=viewport)
-        contexts.append(context)
-        page = context.new_page()
-        page.on("pageerror", lambda error: page_errors.append(f"{address}: {error}"))
-        page.goto(server.address + address)
-        return page
-
-    yield open_it
-    for context in contexts:
-        context.close()
-    assert page_errors == []
-
 
 def open_editor(open_page):
     editor = open_page("/editor", DESKTOP)

@@ -1,0 +1,2 @@
+# Don't track cache files
+*.pyc

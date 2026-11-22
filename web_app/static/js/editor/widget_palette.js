@@ -3,34 +3,8 @@
 
 import { el } from "../common/dom.js";
 import { parseSize } from "../common/grid.js";
-import { setDisplayZoom } from "../display/scale_to_fit.js";
-import { createWidget } from "../display/widgets/index.js";
-import { defaultSettings } from "./editor_state.js";
-
-// The small pictures are drawn at this share of the display's real size.
-const PICTURE_ZOOM = 0.5;
-
-/** A small picture of one widget, drawn by the same code as the display. */
-export function createWidgetPicture({ type, size, settings }, { catalog, demoData }) {
-  const cellPixels = catalog.grid.cell_pixels;
-  const { columns, rows } = parseSize(size);
-  const drawn = createWidget({ type, size, settings }, { cellPixels, demoData });
-
-  // The same frame-and-box pair as the display, so the same styles and zooming apply.
-  const frame = el("div", "display-frame widget-picture");
-  frame.style.setProperty("--display-width", `${columns * cellPixels}px`);
-  frame.style.setProperty("--display-height", `${rows * cellPixels}px`);
-  setDisplayZoom(frame, PICTURE_ZOOM);
-
-  const box = el("div", "display widget-picture__box");
-  box.style.width = `${columns * cellPixels}px`;
-  box.style.height = `${rows * cellPixels}px`;
-  drawn.element.style.left = "0";
-  drawn.element.style.top = "0";
-  box.append(drawn.element);
-  frame.append(box);
-  return frame;
-}
+import { defaultSettings } from "../editing/editor_state.js";
+import { createWidgetPicture } from "../editing/widget_picture.js";
 
 /**
  * Fill the list.

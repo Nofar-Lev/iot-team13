@@ -1,10 +1,12 @@
 // The editor page: connects the editor's parts to one another.
 //
-//   editor_state.js      the layout being edited, and the rules for changing it
+//   editor_state.js      the layout being edited, and the rules for changing it (in ../editing/,
+//                        because the phone editor uses the same rules)
 //   widget_palette.js    the list of widgets on the left
 //   drag_and_drop.js     dragging from the list and on the display
 //   screens_bar.js       moving between screens, adding and removing them
-//   settings_panel.js    the selected widget's settings
+//   widget_settings_form.js  the selected widget's settings (in ../editing/, shared with the
+//                        phone editor)
 //   background_picker.js the current screen's background
 //   save_bar.js          Save, Discard, and the "unsaved changes" mark
 //
@@ -20,10 +22,10 @@ import { keepDisplayFitted } from "../display/scale_to_fit.js";
 import { createWidget } from "../display/widgets/index.js";
 import { setUpBackgroundPicker } from "./background_picker.js";
 import { setUpDragging } from "./drag_and_drop.js";
-import { createEditorState } from "./editor_state.js";
+import { createEditorState } from "../editing/editor_state.js";
+import { setUpWidgetSettingsForm } from "../editing/widget_settings_form.js";
 import { setUpSaveBar } from "./save_bar.js";
 import { setUpScreensBar } from "./screens_bar.js";
-import { setUpSettingsPanel } from "./settings_panel.js";
 import { buildWidgetPalette } from "./widget_palette.js";
 
 // The display is shown larger than the real screen, for comfort, up to this zoom.
@@ -97,7 +99,7 @@ async function startEditor() {
     onPointerDown: dragging.pressOnPaletteEntry,
   });
   setUpScreensBar(document.getElementById("screens-bar"), state);
-  setUpSettingsPanel(document.getElementById("settings-panel"), state);
+  setUpWidgetSettingsForm(document.getElementById("settings-panel"), state);
   setUpBackgroundPicker(document.getElementById("background-picker"), state, catalog);
 
   // The editor listens on the live channel only to know whether a display is connected, so

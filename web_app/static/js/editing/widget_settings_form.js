@@ -1,3 +1,6 @@
+// Shared by the desktop editor and the phone editor: the form is the same for both, and each
+// editor gives it its own place and its own look.
+//
 // The settings of the selected widget. The form is built from the widget catalog, so a new
 // setting in the catalog appears here without any change to this file.
 //
@@ -12,7 +15,7 @@ import { chosenTimeForOffset, offsetForChosenTime } from "../display/time_format
 // when they are long.
 const LONGEST_LABELS_FOR_BUTTON_ROW = 26;
 
-export function setUpSettingsPanel(panelElement, state) {
+export function setUpWidgetSettingsForm(panelElement, state) {
   // The rows of the form being shown, so their visibility can be updated.
   let shownRows = [];
 
