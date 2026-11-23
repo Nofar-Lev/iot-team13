@@ -31,6 +31,15 @@ class ServerConfig:
     # The layout the user saved. Created on the first Save; kept out of the repository.
     saved_layout_path: Path = WEB_APP_DIR / "data" / "saved_layout.json"
 
+    # How long an editor with unsaved changes has to answer when another editor asks to take
+    # over, in seconds. No answer in that time counts as approval.
+    take_over_seconds: float = 20.0
+
+    @property
+    def draft_layout_path(self) -> Path:
+        """The layout being worked on in the editor, kept next to the saved one until Save or Discard."""
+        return self.saved_layout_path.with_name("draft_layout.json")
+
     @property
     def catalog_path(self) -> Path:
         return self.data_dir / "widget_catalog.json"

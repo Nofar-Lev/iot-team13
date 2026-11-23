@@ -1,9 +1,9 @@
 """The live channel, read the way a browser reads it: one piece of news at a time."""
-import json
 from dataclasses import replace
 
 import pytest
 
+from live_channel import Channel
 from server.app import create_app
 
 # The tests use a very short heartbeat, so that "nothing happened" arrives at once.
@@ -13,32 +13,6 @@ SHORT_HEARTBEAT_SECONDS = 0.05
 @pytest.fixture
 def app(config):
     return create_app(replace(config, heartbeat_seconds=SHORT_HEARTBEAT_SECONDS))
-
-
-class Channel:
-    """One open live channel."""
-
-    def __init__(self, app, role):
-        self._response = app.test_client().get(f"/api/events?role={role}", buffered=False)
-        self._pieces = self._response.iter_encoded()
-        self.status_code = self._response.status_code
-        self.content_type = self._response.content_type
-
-    def next_news(self):
-        """The next piece of news as (name, details)."""
-        lines = next(self._pieces).decode("utf-8").splitlines()
-        name = next(line for line in lines if line.startswith("event: "))[len("event: "):]
-        details = next(line for line in lines if line.startswith("data: "))[len("data: "):]
-        return name, json.loads(details)
-
-    def next_news_that_is_not_a_heartbeat(self):
-        while True:
-            name, details = self.next_news()
-            if name != "heartbeat":
-                return name, details
-
-    def close(self):
-        self._response.close()
 
 
 def test_the_channel_is_a_stream_of_events(app):
@@ -119,3 +93,28 @@ def test_a_listener_must_say_what_it_is(app, address):
     response = app.test_client().get(address)
     assert response.status_code == 400
     assert response.get_json()["errors"]
+
+
+def test_an_editor_is_given_an_id_of_its_own(app):
+    first, second = Channel(app, "editor"), Channel(app, "editor")
+    first_id, second_id = first.next_news()[1]["editor"], second.next_news()[1]["editor"]
+    assert first_id and second_id and first_id != second_id
+    first.close()
+    second.close()
+
+
+def test_an_editor_that_closes_its_channel_is_no_longer_the_editor_in_use(app, one_clock_layout):
+    client = app.test_client()
+    first = Channel(app, "editor")
+    first_id = first.next_news()[1]["editor"]
+    client.post("/api/editing/enter", json={"editor": first_id})
+    client.put("/api/editing/draft", json={"editor": first_id, "layout": one_clock_layout})
+
+    first.close()
+
+    second = Channel(app, "editor")
+    second_id = second.next_news()[1]["editor"]
+    answer = client.post("/api/editing/enter", json={"editor": second_id}).get_json()
+    assert answer == {"situation": "draft_left_behind"}   # the draft stayed, and nobody holds the editor
+    assert client.post("/api/editing/save", json={"editor": first_id}).status_code == 409
+    second.close()

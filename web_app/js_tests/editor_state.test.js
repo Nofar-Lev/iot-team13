@@ -1,5 +1,5 @@
 // Tests for the editor's state: what happens to the layout when the user adds, moves and
-// removes things. Run with:  node --test js_tests/
+// removes things. Run with:  node --test   (from the web_app folder)
 //
 // They use the real widget catalog and the real default layout.
 

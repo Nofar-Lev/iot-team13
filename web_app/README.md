@@ -186,7 +186,8 @@ That runs three kinds of test, and takes about two minutes with all of them:
 
 - **The server's tests.** Always run.
 - **The pages' logic tests** (`js_tests/`). They need Node.js and are skipped without it.
-  They can also be run alone: `node --test js_tests/`.
+  They can also be run alone, from this folder: `node --test`. (With nothing after it, Node
+  finds the test files by itself. Given the folder's name, some versions of Node fail.)
 - **Tests that use the pages in a real browser.** As a desktop: dragging, saving, watching the
   device page redraw, stopping and restarting the server. As a phone, with real touches: the
   home page upright and sideways, and the whole phone editor (taps, swipes, press and hold,

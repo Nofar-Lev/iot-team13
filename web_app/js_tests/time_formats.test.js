@@ -1,5 +1,5 @@
 // Tests for the text the clock and the date show, and for the small conversions.
-// Run with:  node --test js_tests/
+// Run with:  node --test   (from the web_app folder)
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
