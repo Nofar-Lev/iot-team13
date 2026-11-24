@@ -313,3 +313,31 @@ test("a listener that unsubscribed hears nothing more", () => {
   state.addWidget("stock", "2x1", 2, 0);
   assert.deepEqual(heard, ["widgets"]);
 });
+
+// --- Starting from unsaved work ----------------------------------------------------------------
+
+test("a state that starts from a draft shows the draft, with unsaved changes", () => {
+  const draftLayout = emptyLayout();
+  draftLayout.screens[0].background = "night-sky";
+  const state = createEditorState({ catalog, savedLayout: emptyLayout(), draftLayout });
+  assert.deepEqual(state.layout(), draftLayout);
+  assert.equal(state.hasUnsavedChanges(), true);
+});
+
+test("discarding in a state that started from a draft goes back to the saved layout", () => {
+  const draftLayout = emptyLayout();
+  draftLayout.screens.push({ background: "night-sky", widgets: [] });
+  const state = createEditorState({ catalog, savedLayout: emptyLayout(), draftLayout });
+  state.showScreen(1);
+  state.discardChanges();
+  assert.deepEqual(state.layout(), emptyLayout());
+  assert.equal(state.screenIndex(), 0);
+  assert.equal(state.hasUnsavedChanges(), false);
+});
+
+test("a draft that is passed in is not changed by editing", () => {
+  const draftLayout = emptyLayout();
+  const state = createEditorState({ catalog, savedLayout: emptyLayout(), draftLayout });
+  state.addWidgetAnywhere("clock", "2x1");
+  assert.deepEqual(draftLayout, emptyLayout());
+});

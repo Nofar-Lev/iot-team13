@@ -25,12 +25,18 @@ export function defaultSettings(catalogWidget) {
   return Object.fromEntries(catalogWidget.settings.map((setting) => [setting.key, setting.default]));
 }
 
-export function createEditorState({ catalog, savedLayout }) {
+/**
+ * savedLayout: what the server has saved.
+ * draftLayout: the unsaved work to continue from, when there is some (it was left behind by
+ *              an earlier editor, or taken over from another one). Leave it out to start
+ *              from the saved layout.
+ */
+export function createEditorState({ catalog, savedLayout, draftLayout = null }) {
   const grid = { columns: catalog.grid.columns, rows: catalog.grid.rows };
   const catalogWidgets = new Map(catalog.widgets.map((entry) => [entry.type, entry]));
 
-  let saved = copyOf(savedLayout);   // what the server has
-  let draft = copyOf(savedLayout);   // what the user is editing
+  let saved = copyOf(savedLayout);                  // what the server has saved
+  let draft = copyOf(draftLayout ?? savedLayout);   // what the user is editing
   let screenIndex = 0;
   let selectedIndex = null;
 
