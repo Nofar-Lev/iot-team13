@@ -132,6 +132,7 @@ class OneEditorAtATime:
         with self._lock:
             take_over = self._take_over
             if take_over is not None and take_over.new_editor == editor:
+                # The editor that asked to take over is gone. The editor in use goes on.
                 self._withdraw_take_over()
             elif editor == self._editor_in_use:
                 if take_over is not None:
@@ -205,12 +206,6 @@ class OneEditorAtATime:
                 "seconds": self._take_over_seconds,
             })
             return self._waiting()
-
-    def give_up_take_over(self, editor: str) -> None:
-        """The editor that asked to take over no longer wants to. The editor in use goes on."""
-        with self._lock:
-            if self._take_over is not None and self._take_over.new_editor == editor:
-                self._withdraw_take_over()
 
     def approve_take_over(self, editor: str) -> None:
         with self._lock:

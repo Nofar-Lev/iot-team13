@@ -15,6 +15,20 @@ def waiting_news(listener):
             return news
 
 
+def save_as_an_editor(app, layout):
+    """Save a layout the way an editor page does: connect, become the editor in use, send the
+    layout as the draft, and save. Returns each step's (status, answer), as a dictionary with
+    "draft" and "save". The editor leaves afterwards."""
+    client = app.test_client()
+    channel = Channel(app, "editor")
+    editor = channel.next_news()[1]["editor"]
+    client.post("/api/editing/enter", json={"editor": editor})
+    draft = client.put("/api/editing/draft", json={"editor": editor, "layout": layout})
+    save = client.post("/api/editing/save", json={"editor": editor})
+    channel.close()
+    return {"draft": (draft.status_code, draft.get_json()), "save": (save.status_code, save.get_json())}
+
+
 class Channel:
     """One open live channel of the running app, read one piece of news at a time."""
 

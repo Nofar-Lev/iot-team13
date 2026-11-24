@@ -7,12 +7,12 @@ turns requests into questions for them, and their answers into JSON.
 
     POST /api/editing/enter                 a newly opened editor asks to be the one in use
     POST /api/editing/draft-left-behind     ... and chose to resume or discard a draft it found
-    POST /api/editing/leave                 an editor page is going away
+    POST /api/editing/leave                 an editor page is going away. If it was asking to
+                                            take over, that stops the asking
     PUT  /api/editing/draft                 the editor in use changed something
     POST /api/editing/save                  the draft becomes the saved layout
     POST /api/editing/discard               the draft is erased
     POST /api/editing/take-over             ask the editor in use to hand over
-    POST /api/editing/take-over/give-up     ... and stop asking
     POST /api/editing/take-over/approve     the editor in use hands over
     POST /api/editing/take-over/refuse      the editor in use goes on editing
 
@@ -88,10 +88,6 @@ def create_editing_api(editors: OneEditorAtATime) -> Blueprint:
     @editing_api.post("/api/editing/take-over")
     def ask_to_take_over():
         return answer(lambda editor, body: editors.ask_to_take_over(editor, keep_changes_of(body)))
-
-    @editing_api.post("/api/editing/take-over/give-up")
-    def give_up_take_over():
-        return answer(lambda editor, body: editors.give_up_take_over(editor))
 
     @editing_api.post("/api/editing/take-over/approve")
     def approve_take_over():

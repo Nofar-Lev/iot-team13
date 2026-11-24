@@ -348,15 +348,15 @@ def test_after_a_refusal_the_new_editor_can_ask_again(desk, editor_with_unsaved_
     assert desk.editors.ask_to_take_over(new.id, keep_changes=True)["situation"] == "waiting_for_the_other_editor"
 
 
-@pytest.mark.parametrize("how_it_gives_up", ["says so", "its page closes"])
-def test_when_the_new_editor_gives_up_the_question_disappears(desk, editor_with_unsaved_changes, changed_layout,
-                                                               changed_again_layout, how_it_gives_up):
+@pytest.mark.parametrize("how_it_leaves", ["says so", "its page closes"])
+def test_when_the_new_editor_leaves_the_question_disappears(desk, editor_with_unsaved_changes, changed_layout,
+                                                             changed_again_layout, how_it_leaves):
     old, new = editor_with_unsaved_changes, desk.open_editor()
     desk.editors.ask_to_take_over(new.id, keep_changes=False)
     waiting_news(old)
 
-    if how_it_gives_up == "says so":
-        desk.editors.give_up_take_over(new.id)
+    if how_it_leaves == "says so":
+        desk.editors.leave(new.id)   # "Return to home": its channel is still open for a moment
     else:
         desk.close(new)
 
@@ -368,11 +368,13 @@ def test_when_the_new_editor_gives_up_the_question_disappears(desk, editor_with_
     assert may_edit(desk, old, changed_again_layout)
 
 
-def test_giving_up_when_nothing_is_waiting_is_harmless(desk, editor_with_unsaved_changes):
+def test_a_bystander_that_leaves_disturbs_nobody(desk, editor_with_unsaved_changes, changed_again_layout):
     old, bystander = editor_with_unsaved_changes, desk.open_editor()
-    desk.editors.give_up_take_over(bystander.id)
-    desk.editors.give_up_take_over(old.id)
+    desk.editors.enter(bystander.id)
+    desk.editors.leave(bystander.id)
+    desk.editors.leave("made-up-id")
     assert waiting_news(old) == []
+    assert may_edit(desk, old, changed_again_layout)
 
 
 @pytest.mark.parametrize("keep_changes", [True, False])

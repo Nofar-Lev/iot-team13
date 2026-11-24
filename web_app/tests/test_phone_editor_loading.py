@@ -35,6 +35,16 @@ class HeldBack:
         self._waiting.clear()
 
 
+def eventually_waiting(page, held_back) -> None:
+    """Wait until the page has asked for what is being held back."""
+    page.wait_for_function("document.querySelector('#panel') !== null")
+    for _ in range(50):
+        if held_back.is_waiting():
+            return
+        page.wait_for_timeout(100)
+    raise AssertionError("The page never asked for it")
+
+
 def start_screen(page):
     return page.locator("#start-screen")
 
@@ -79,10 +89,10 @@ def test_the_button_is_not_shown_before_the_editors_code_has_arrived(open_page):
 
 
 def test_the_button_is_not_shown_before_the_layout_has_arrived(open_page):
-    layout = HeldBack("**/api/layout")                             # the layout is slow to arrive
+    # The layout comes with the server's answer to "may I be the editor in use?".
+    layout = HeldBack("**/api/editing/enter")                      # that answer is slow to arrive
     editor = open_page("/editor", PHONE, as_phone=True, prepare=layout.prepare)
-    editor.wait_for_function("document.querySelector('#panel') !== null")
-    editor.wait_for_timeout(300)
+    eventually_waiting(editor, layout)
     expect_still_loading(editor)
 
     layout.let_through()
@@ -102,7 +112,7 @@ def test_the_button_is_not_shown_before_the_pictures_have_arrived(open_page):
 
 def test_when_the_editor_cannot_load_the_start_screen_says_so(open_page):
     def prepare(page):
-        page.route("**/api/layout", lambda route: route.abort())  # the server cannot be reached
+        page.route("**/api/catalog", lambda route: route.abort())  # the server cannot be reached
 
     editor = open_page("/editor", PHONE, as_phone=True, prepare=prepare)
     expect(start_screen(editor)).to_have_attribute("data-state", "failed")
@@ -176,19 +186,21 @@ def test_every_background_is_fetched_before_the_editor_is_opened(open_page):
     ]
 
 
-def test_moving_between_screens_and_choosing_a_background_needs_nothing_from_the_server(open_page, server):
+def test_the_browser_keeps_every_background_and_needs_the_server_for_none(open_page, server):
     editor = open_page("/editor", PHONE, as_phone=True)
     editor.wait_for_selector("body[data-ready]")
     editor.locator("#open-editor-button").tap()
     expect(editing_screen(editor)).to_be_visible()
-
-    server.stop()                                                  # from here on, nothing can be fetched
 
     finger_swipe(editor, preview_point(editor, 0.7, 0.4), preview_point(editor, 0.3, 0.4))   # to the second screen
     expect(shown_screen(editor)).to_have_attribute("data-screen", "1")
     editor.locator("#backgrounds-button").tap()                    # six swatches, six pictures
     expect(editor.locator(".swatch")).to_have_count(6)
     editor.locator('.swatch[data-background-id="forest"]').tap()
+
+    # From here on, nothing can be fetched. (The editor itself stops and says that the
+    # connection was lost; this test is about the pictures.)
+    server.stop()
 
     # Every background can still be drawn: the browser has them all, and asks nobody.
     pictures_the_browser_has = editor.evaluate("""async () => {

@@ -9,7 +9,7 @@ from dataclasses import replace
 import pytest
 
 from live_channel import Channel
-from server.app import create_app
+from server.app import LARGEST_REQUEST_BYTES, create_app
 
 SHORT_HEARTBEAT_SECONDS = 0.05
 
@@ -109,6 +109,36 @@ def test_a_draft_update_must_carry_a_good_layout(open_editor, one_clock_layout):
     one_clock_layout["version"] = 99
     status, answer = editor.ask("draft", method="put", layout=one_clock_layout)
     assert status == 400 and answer["errors"]
+
+
+def test_a_layout_that_breaks_a_rule_is_refused_with_the_reason(open_editor, one_clock_layout):
+    editor = open_editor()
+    editor.ask("enter")
+    one_clock_layout["screens"][0]["widgets"][0]["col"] = 5
+    status, answer = editor.ask("draft", method="put", layout=one_clock_layout)
+    assert status == 400
+    assert len(answer["errors"]) == 1
+    assert "does not fit inside the grid" in answer["errors"][0]
+
+
+def test_a_refused_layout_changes_nothing(app, config, open_editor, one_clock_layout, default_layout):
+    editor = open_editor()
+    editor.ask("enter")
+    one_clock_layout["version"] = 99
+    editor.ask("draft", method="put", layout=one_clock_layout)
+    assert editor.ask("save") == (200, {"revision": 0, "saved_at": None})   # there was nothing to save
+    assert app.test_client().get("/api/layout").get_json() == {"revision": 0, "saved_at": None, "layout": default_layout}
+    assert not config.saved_layout_path.exists()
+    assert not config.draft_layout_path.exists()
+
+
+def test_a_request_far_larger_than_a_layout_is_refused(app, config, open_editor):
+    editor = open_editor()
+    editor.ask("enter")
+    oversized = json.dumps({"editor": editor.id, "layout": {"padding": "x" * (LARGEST_REQUEST_BYTES + 1)}})
+    response = app.test_client().put("/api/editing/draft", data=oversized, content_type="application/json")
+    assert response.status_code in (400, 413)
+    assert not config.draft_layout_path.exists()
 
 
 def test_saving_makes_the_draft_what_the_device_shows_and_tells_it(app, open_editor, one_clock_layout):
@@ -218,12 +248,12 @@ def test_a_take_over_that_is_refused(open_editor, old_editor_with_unsaved_change
     assert new.ask("save")[0] == 409
 
 
-def test_a_take_over_that_the_new_editor_gives_up(open_editor, old_editor_with_unsaved_changes):
+def test_a_take_over_that_the_new_editor_walks_away_from(open_editor, old_editor_with_unsaved_changes):
     old, new = old_editor_with_unsaved_changes, open_editor()
     new.ask("take-over", keep_changes=False)
     old.next_news()
 
-    assert new.ask("take-over/give-up") == (200, {})
+    assert new.ask("leave") == (200, {})
 
     assert old.next_news() == ("take_over_withdrawn", {})
     status, answer = old.ask("take-over/approve")

@@ -46,7 +46,7 @@ def create_app(config: Optional[ServerConfig] = None) -> Flask:
 
     app.register_blueprint(create_pages(config.static_dir))
     app.register_blueprint(create_catalog_api(catalog, config.demo_data_path))
-    app.register_blueprint(create_layout_api(store, catalog, live_updates))
+    app.register_blueprint(create_layout_api(store))
     app.register_blueprint(create_editing_api(editors))
     app.register_blueprint(create_events_api(store, live_updates, editors, config.heartbeat_seconds))
 

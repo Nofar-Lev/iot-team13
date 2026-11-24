@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import pytest
 
-from live_channel import Channel
+from live_channel import Channel, save_as_an_editor
 from server.app import create_app
 
 # The tests use a very short heartbeat, so that "nothing happened" arrives at once.
@@ -48,7 +48,7 @@ def test_a_save_reaches_every_connected_page(app, one_clock_layout):
     device.next_news()
     home.next_news()
 
-    answer = app.test_client().put("/api/layout", json=one_clock_layout).get_json()
+    _, answer = save_as_an_editor(app, one_clock_layout)["save"]
 
     for channel in (device, home):
         name, details = channel.next_news_that_is_not_a_heartbeat()
@@ -61,7 +61,7 @@ def test_a_refused_save_is_not_announced(app, one_clock_layout):
     device = Channel(app, "device")
     device.next_news()
     one_clock_layout["version"] = 99
-    app.test_client().put("/api/layout", json=one_clock_layout)
+    assert save_as_an_editor(app, one_clock_layout)["draft"][0] == 400
     assert device.next_news() == ("heartbeat", {})
     device.close()
 
@@ -79,9 +79,9 @@ def test_the_home_page_hears_the_display_come_and_go(app):
     home.close()
 
 
-def test_a_page_that_reconnects_learns_the_newest_revision(app, one_clock_layout):
-    app.test_client().put("/api/layout", json=one_clock_layout)
-    app.test_client().put("/api/layout", json=one_clock_layout)
+def test_a_page_that_reconnects_learns_the_newest_revision(app, one_clock_layout, default_layout):
+    save_as_an_editor(app, one_clock_layout)
+    save_as_an_editor(app, default_layout)
     channel = Channel(app, "device")
     name, details = channel.next_news()
     assert (name, details["revision"]) == ("hello", 2)
