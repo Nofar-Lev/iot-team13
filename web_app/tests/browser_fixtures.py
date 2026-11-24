@@ -52,8 +52,12 @@ def sideways(phone: tuple) -> dict:
 class RunningServer:
     """The real server, as a separate program that a test can stop and start again."""
 
-    def __init__(self, saved_layout_path: Path):
+    def __init__(self, saved_layout_path: Path, take_over_seconds: float = None):
         self.saved_layout_path = saved_layout_path
+        # The unsaved work of the editor in use. The file exists only while something is unsaved.
+        self.draft_layout_path = saved_layout_path.with_name("draft_layout.json")
+        # None leaves the server's own time for answering a take-over as it is.
+        self._take_over_seconds = take_over_seconds
         self.port = self._free_port()
         self.address = f"http://127.0.0.1:{self.port}"
         self._process = None
@@ -67,7 +71,8 @@ class RunningServer:
     def start(self) -> None:
         self._process = subprocess.Popen(
             [sys.executable, str(TESTS_DIR / "serve_with_temporary_data.py"),
-             str(self.port), str(self.saved_layout_path)],
+             str(self.port), str(self.saved_layout_path),
+             *([str(self._take_over_seconds)] if self._take_over_seconds is not None else [])],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         deadline = time.monotonic() + 15
@@ -89,6 +94,13 @@ class RunningServer:
         with urllib.request.urlopen(f"{self.address}/api/layout", timeout=2) as answer:
             return json.load(answer)
 
+    def read_draft(self):
+        """The draft the server keeps, or None when nothing is unsaved."""
+        try:
+            return json.loads(self.draft_layout_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None   # no draft, or the server is in the middle of writing it
+
 
 @pytest.fixture(scope="module")
 def browser():
@@ -103,11 +115,25 @@ def browser():
 
 
 @pytest.fixture
-def server(tmp_path):
-    running = RunningServer(tmp_path / "saved_layout.json")
+def server(tmp_path, request):
+    """The real server. A test marked with @pytest.mark.take_over_seconds(2) gets a server
+    that gives an editor two seconds, not twenty, to answer a take-over."""
+    marker = request.node.get_closest_marker("take_over_seconds")
+    running = RunningServer(tmp_path / "saved_layout.json", take_over_seconds=marker.args[0] if marker else None)
     running.start()
     yield running
     running.stop()
+
+
+def eventually(check, seconds: float = 5.0):
+    """Wait until check() answers something true, and return it. Fails if it never does."""
+    deadline = time.monotonic() + seconds
+    while True:
+        answer = check()
+        if answer or time.monotonic() > deadline:
+            assert answer, "It did not happen in time"
+            return answer
+        time.sleep(0.05)
 
 
 @pytest.fixture

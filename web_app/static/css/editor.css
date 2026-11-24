@@ -486,3 +486,224 @@ body.is-dragging * {
   color: var(--ink);
   font-weight: 500;
 }
+
+/* --- Dialogs -------------------------------------------------------------------------------- */
+
+/* The messages of "one editor at a time" and the question on leaving (js/editing/dialog.js).
+   A dialog covers the whole editor, dimmed, and sits in its middle. */
+
+.dialog-backdrop {
+  --dialog-ink: #3d4359;
+  --maroon: #8a3536;
+  --maroon-soft: #f5e6e4;
+  --amber: #d98f0e;
+  --amber-ink: #8f5d00;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(30, 34, 51, 0.45);
+}
+
+.dialog {
+  position: relative;
+  width: min(470px, 100%);
+  padding: 18px 20px 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--dialog-ink);
+  box-shadow: 0 16px 48px rgba(30, 34, 51, 0.35);
+  outline: none;
+}
+
+.dialog__title {
+  /* Room for the X, where the dialog has one. */
+  padding-right: 34px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.dialog__text {
+  margin-top: 6px;
+  color: var(--ink-soft);
+}
+
+/* The countdown: a bar that empties, and a line that says how long is left. */
+
+.dialog__countdown {
+  margin-top: 14px;
+}
+
+.dialog__countdown-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+
+.dialog__countdown-filling {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.25s linear, background-color 0.3s;
+}
+
+.dialog__countdown-text {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+
+/* The editor that is asked to hand over is warned as its time runs out: amber when half is
+   left, then maroon and pulsing for the last quarter. */
+
+.dialog__countdown[data-stage="soon"] .dialog__countdown-filling {
+  background: var(--amber);
+}
+
+.dialog__countdown[data-stage="soon"] .dialog__countdown-text {
+  color: var(--amber-ink);
+}
+
+.dialog__countdown[data-stage="now"] .dialog__countdown-filling {
+  background: var(--maroon);
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+.dialog__countdown[data-stage="now"] .dialog__countdown-text {
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Someone who asked their computer for less movement gets the colours without the pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .dialog__countdown[data-stage="now"] .dialog__countdown-filling {
+    animation: none;
+  }
+}
+
+/* The buttons: side by side, or one under the other where their labels are long. */
+
+.dialog__buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dialog__buttons--stacked {
+  flex-direction: column;
+}
+
+.dialog__button {
+  flex: 1 1 0;
+  min-height: 46px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+
+.dialog__buttons--stacked .dialog__button {
+  flex: none;
+}
+
+.dialog__button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.dialog__button:disabled,
+.dialog__dismiss-line:disabled,
+.dialog__close:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Purple keeps work, pale purple is the second good choice, maroon throws work away, and a
+   plain outline leaves things as they are. */
+.dialog__button--main {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.dialog__button--soft {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.dialog__button--discards {
+  background: var(--maroon-soft);
+  color: var(--maroon);
+}
+
+.dialog__button--plain {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--dialog-ink);
+}
+
+/* A button with a second line that says what it does. */
+.dialog__button--explained {
+  display: grid;
+  gap: 1px;
+  padding: 8px 14px;
+  text-align: left;
+}
+
+.dialog__button-explanation {
+  font-size: 12.5px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* The quiet way out: a line under the buttons, and an X in the corner. */
+
+.dialog__dismiss-line {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dialog__dismiss-line:hover:not(:disabled) {
+  color: var(--dialog-ink);
+}
+
+.dialog__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f2ee;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.dialog__close:hover:not(:disabled) {
+  background: #e9e7e1;
+  color: var(--dialog-ink);
+}
