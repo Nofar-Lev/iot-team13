@@ -19,29 +19,36 @@
 //   widget_sizes_screen.js   the sizes of one widget        (uses widget_rows.js)
 //   widget_options_screen.js the selected widget's settings
 //   backgrounds_screen.js    the backgrounds of the current screen
-//   saving.js                saving the layout
-//   leaving.js, unsaved_changes_dialog.js   leaving the editor with unsaved changes
 //
-// The rules of editing, the settings form and the small widget pictures (../editing/) and the
-// drawing of the display (../display/) are the same ones the desktop editor uses.
+// And from ../editing/, shared with the desktop editor: the rules of editing, the settings
+// form and the small widget pictures; and this page's part in "one editor at a time":
+//
+//   editing_session.js       asking to be the editor in use, keeping the server's draft up
+//                            to date, taking over
+//   session_messages.js, dialog.js   what the session's messages say, and the dialog they
+//                            are shown in
+//   saving.js, leaving.js    Save and Discard, and leaving with unsaved changes
+//
+// The drawing of the display (../display/) is the one every page uses.
 
-import { openLiveChannel } from "../common/live_channel.js";
-import { fetchCatalog, fetchDemoData, fetchSavedLayout } from "../common/server_api.js";
+import { fetchCatalog, fetchDemoData } from "../common/server_api.js";
 import { showToast } from "../common/toast.js";
 import { preloadBackgrounds } from "../display/display_view.js";
+import { createDialog } from "../editing/dialog.js";
+import { createEditingSession } from "../editing/editing_session.js";
 import { createEditorState } from "../editing/editor_state.js";
+import { createLeaving } from "../editing/leaving.js";
+import { createSaving } from "../editing/saving.js";
+import { messageFor } from "../editing/session_messages.js";
 import { createAddWidgetScreen } from "./add_widget_screen.js";
 import { createBackgroundsScreen } from "./backgrounds_screen.js";
 import { createCarrying } from "./carrying.js";
 import { createCarryingFromList } from "./carrying_from_list.js";
-import { guardUnsavedChanges } from "./leaving.js";
 import { createMainMenuScreen } from "./main_menu.js";
 import { createPanel } from "./panel.js";
 import { createPanelRouter } from "./panel_router.js";
 import { createPreview } from "./preview.js";
 import { setUpPreviewTouches } from "./preview_touches.js";
-import { createSaving } from "./saving.js";
-import { DISCARD, SAVE, createUnsavedChangesDialog } from "./unsaved_changes_dialog.js";
 import { setUpScreenNavigation } from "./screen_navigation.js";
 import { setUpStartScreen } from "./start_screen.js";
 import { setUpTapsBesideThePreview } from "./taps_beside_the_preview.js";
@@ -55,6 +62,9 @@ const LONGEST_WAIT_FOR_PICTURES_MS = 4000;
 const wait = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
 
 async function startPhoneEditor() {
+  const startScreen = document.getElementById("start-screen");
+  const editingScreen = document.getElementById("editing-screen");
+
   // The start screen shows "Loading editor..." until the editor says it is ready, and then
   // the button that opens the editing screen.
   let sayWhetherTheEditorIsReady = null;
@@ -62,29 +72,82 @@ async function startPhoneEditor() {
     sayWhetherTheEditorIsReady = resolve;
   });
   setUpStartScreen({
-    startScreen: document.getElementById("start-screen"),
-    editingScreen: document.getElementById("editing-screen"),
+    startScreen,
+    editingScreen,
     openButton: document.getElementById("open-editor-button"),
     whenEditorIsReady,
   });
 
+  // A dialog covers whichever of the two screens is showing. A newly opened editor meets
+  // its questions on the start screen; the editor in use meets them wherever it is.
+  const dialog = createDialog({ holder: document.body, elementsBehind: [startScreen, editingScreen] });
+
+  let catalog, demoData;
   try {
-    await buildEditor();
-    sayWhetherTheEditorIsReady(true);
-    document.body.dataset.ready = "true";
+    [catalog, demoData] = await Promise.all([fetchCatalog(), fetchDemoData()]);
   } catch (problem) {
     sayWhetherTheEditorIsReady(false);
     throw problem;
   }
+  // Every background is fetched now, while the rest goes on: the ones of every screen, and
+  // the ones the Backgrounds list shows. Moving between screens then never waits for a picture.
+  const backgroundsHaveArrived = preloadBackgrounds(catalog);
+
+  // The live channel also says whether a display is connected, so that the message after a
+  // Save can say what will happen.
+  let displayIsOnline = false;
+  let isEditorBuilt = false;
+
+  /** This page is the editor in use: build the editing screen, and then show the button. */
+  async function becomeTheEditor({ saved, draft }) {
+    try {
+      buildEditor({
+        catalog, demoData, session, dialog, goHome,
+        savedLayout: saved.layout,
+        draftLayout: draft,
+        isDisplayOnline: () => displayIsOnline,
+      });
+      await Promise.race([backgroundsHaveArrived, wait(LONGEST_WAIT_FOR_PICTURES_MS)]);
+      sayWhetherTheEditorIsReady(true);
+      document.body.dataset.ready = "true";
+    } catch (problem) {
+      sayWhetherTheEditorIsReady(false);
+      console.error(problem);
+    }
+  }
+
+  const session = createEditingSession({
+    onNews(name, details) {
+      if (name === "hello") displayIsOnline = details.display_online;
+      if (name === "display") displayIsOnline = details.online;
+    },
+    onSituation(situation) {
+      if (situation.name === "editing" && !isEditorBuilt) {
+        isEditorBuilt = true;
+        becomeTheEditor(situation);
+      }
+      const message = messageFor(situation, { session, goHome, reload: () => window.location.reload() });
+      if (message) dialog.show(message);
+      else dialog.close();
+    },
+  });
+
+  /** Leave for the home page. The server is told first, so that it knows at once. */
+  async function goHome() {
+    await session.leave();
+    window.location.href = "/";
+  }
+
+  session.start();
 }
 
-async function buildEditor() {
-  const [catalog, demoData, saved] = await Promise.all([fetchCatalog(), fetchDemoData(), fetchSavedLayout()]);
-  // Every background is fetched now, while the rest of the editor is put together: the ones
-  // of the other screens, and the ones the Backgrounds list shows. Moving between screens
-  // then never waits for a picture.
-  const backgroundsHaveArrived = preloadBackgrounds(catalog);
-  const state = createEditorState({ catalog, savedLayout: saved.layout });
+/** Build the editing screen. Called once, when this page becomes the editor in use. */
+function buildEditor({ catalog, demoData, session, dialog, goHome, savedLayout, draftLayout, isDisplayOnline }) {
+  const state = createEditorState({ catalog, savedLayout, draftLayout });
+
+  // Every change of the layout goes to the server's draft. The session sends it only if the
+  // layout really differs from what the server has.
+  state.subscribe(() => session.layoutChanged(state.layout()));
 
   // --- The preview ------------------------------------------------------------------------------
 
@@ -120,34 +183,11 @@ async function buildEditor() {
   const carrying = createCarrying({ state, displayView });
   const makeCarriable = createCarryingFromList({ state, carrying, catalog, demoData });
 
-  // --- Saving, and whether a display is connected to hear about it --------------------------------
+  // --- Saving, discarding, and leaving ------------------------------------------------------------
 
-  let displayIsOnline = false;
-  openLiveChannel({
-    role: "editor",
-    onNews(name, details) {
-      if (name === "hello") displayIsOnline = details.display_online;
-      if (name === "display") displayIsOnline = details.online;
-    },
-  });
-  const saving = createSaving({ state, isDisplayOnline: () => displayIsOnline });
-  const unsavedChangesGuard = guardUnsavedChanges(state);
-  const unsavedChangesDialog = createUnsavedChangesDialog(document.getElementById("editing-screen"));
-
-  /** Home was pressed. With unsaved changes, the user chooses what happens to them first. */
-  async function goHome() {
-    if (!state.hasUnsavedChanges()) {
-      unsavedChangesGuard.leaveTo("/");
-      return;
-    }
-    const choice = await unsavedChangesDialog.ask();
-    if (choice === DISCARD) {
-      unsavedChangesGuard.leaveTo("/");
-    } else if (choice === SAVE) {
-      // If the save fails, the user stays in the editor, with the changes and a message.
-      if (await saving.save()) unsavedChangesGuard.leaveTo("/");
-    }
-  }
+  const saving = createSaving({ state, session, isDisplayOnline });
+  // Home was pressed. With unsaved changes, the user chooses what happens to them first.
+  const leave = createLeaving({ state, saving, dialog, goHome });
 
   // --- The panel --------------------------------------------------------------------------------
 
@@ -166,7 +206,8 @@ async function buildEditor() {
         onAddWidget: () => router.openAddWidget(),
         onBackgrounds: () => router.openBackgrounds(),
         onSave: () => saving.save(),
-        onGoHome: goHome,
+        onDiscard: () => saving.discard(),
+        onGoHome: leave,
       }),
       addWidget: createAddWidgetScreen({
         panel,
@@ -202,8 +243,6 @@ async function buildEditor() {
   });
   drawCurrentScreen();
   router.showWhatApplies();
-
-  await Promise.race([backgroundsHaveArrived, wait(LONGEST_WAIT_FOR_PICTURES_MS)]);
 }
 
 startPhoneEditor().catch((problem) => {

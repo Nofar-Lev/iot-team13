@@ -1,29 +1,37 @@
 // The editor page: connects the editor's parts to one another.
 //
-//   editor_state.js      the layout being edited, and the rules for changing it (in ../editing/,
-//                        because the phone editor uses the same rules)
+//   editing_session.js   this page's part in "one editor at a time": asking to be the editor
+//                        in use, keeping the server's draft up to date, taking over (in
+//                        ../editing/, like everything the phone editor uses too)
+//   session_messages.js, dialog.js   what the session's messages say, and the dialog they
+//                        are shown in (../editing/)
+//   editor_state.js      the layout being edited, and the rules for changing it (../editing/)
 //   widget_palette.js    the list of widgets on the left
 //   drag_and_drop.js     dragging from the list and on the display
 //   screens_bar.js       moving between screens, adding and removing them
-//   widget_settings_form.js  the selected widget's settings (in ../editing/, shared with the
-//                        phone editor)
+//   widget_settings_form.js  the selected widget's settings (../editing/)
 //   background_picker.js the current screen's background
-//   save_bar.js          Save, Discard, and the "unsaved changes" mark
+//   saving.js, leaving.js    Save and Discard, and leaving with unsaved changes (../editing/)
+//   save_bar.js          the Save and Discard buttons, and the "unsaved changes" mark
 //
 // The display in the middle is drawn by the same module the device uses (display_view.js).
 
 import { el } from "../common/dom.js";
 import { icon } from "../common/icons.js";
-import { openLiveChannel } from "../common/live_channel.js";
 import { fetchCatalog, fetchDemoData, fetchSavedLayout } from "../common/server_api.js";
 import { showToast } from "../common/toast.js";
 import { createDisplayView } from "../display/display_view.js";
 import { keepDisplayFitted } from "../display/scale_to_fit.js";
 import { createWidget } from "../display/widgets/index.js";
+import { createDialog } from "../editing/dialog.js";
+import { createEditingSession } from "../editing/editing_session.js";
+import { createEditorState } from "../editing/editor_state.js";
+import { createLeaving } from "../editing/leaving.js";
+import { createSaving } from "../editing/saving.js";
+import { messageFor } from "../editing/session_messages.js";
+import { setUpWidgetSettingsForm } from "../editing/widget_settings_form.js";
 import { setUpBackgroundPicker } from "./background_picker.js";
 import { setUpDragging } from "./drag_and_drop.js";
-import { createEditorState } from "../editing/editor_state.js";
-import { setUpWidgetSettingsForm } from "../editing/widget_settings_form.js";
 import { setUpSaveBar } from "./save_bar.js";
 import { setUpScreensBar } from "./screens_bar.js";
 import { buildWidgetPalette } from "./widget_palette.js";
@@ -35,14 +43,64 @@ const ROOM_AROUND_DISPLAY = 28;
 
 async function startEditor() {
   const [catalog, demoData, saved] = await Promise.all([fetchCatalog(), fetchDemoData(), fetchSavedLayout()]);
-  const state = createEditorState({ catalog, savedLayout: saved.layout });
 
-  // --- The display in the middle --------------------------------------------------------------
-
+  // The display in the middle. Until this page is the editor in use, it shows the saved
+  // layout as a picture, behind whatever the page has to ask first.
   const stage = document.getElementById("editor-stage");
   const displayView = createDisplayView({ catalog, demoData });
   stage.append(displayView.frame);
   keepDisplayFitted(displayView.frame, stage, { margin: ROOM_AROUND_DISPLAY, largestZoom: LARGEST_ZOOM });
+  displayView.showScreen(saved.layout.screens[0]);
+
+  const dialog = createDialog({
+    holder: document.body,
+    elementsBehind: [document.querySelector(".top-bar"), document.querySelector(".editor")],
+  });
+
+  // The live channel also says whether a display is connected, so that the message after a
+  // Save can say what will happen.
+  let displayIsOnline = false;
+  let isEditorBuilt = false;
+
+  const session = createEditingSession({
+    onNews(name, details) {
+      if (name === "hello") displayIsOnline = details.display_online;
+      if (name === "display") displayIsOnline = details.online;
+    },
+    onSituation(situation) {
+      if (situation.name === "editing" && !isEditorBuilt) {
+        isEditorBuilt = true;
+        buildEditor({
+          catalog, demoData, displayView, dialog, session, goHome,
+          savedLayout: situation.saved.layout,
+          draftLayout: situation.draft,
+          isDisplayOnline: () => displayIsOnline,
+        });
+      }
+      const message = messageFor(situation, { session, goHome, reload: () => window.location.reload() });
+      if (message) dialog.show(message);
+      else dialog.close();
+    },
+  });
+
+  /** Leave for the home page. The server is told first, so that it knows at once. */
+  async function goHome() {
+    await session.leave();
+    window.location.href = "/";
+  }
+
+  session.start();
+}
+
+/** Build the editor itself. Called once, when this page becomes the editor in use. */
+function buildEditor({ catalog, demoData, displayView, dialog, session, goHome, savedLayout, draftLayout, isDisplayOnline }) {
+  const state = createEditorState({ catalog, savedLayout, draftLayout });
+
+  // Every change of the layout goes to the server's draft. The session sends it only if the
+  // layout really differs from what the server has.
+  state.subscribe(() => session.layoutChanged(state.layout()));
+
+  // --- The display in the middle --------------------------------------------------------------
 
   function markSelectedWidget() {
     for (const element of displayView.widgetElements()) {
@@ -102,17 +160,7 @@ async function startEditor() {
   setUpWidgetSettingsForm(document.getElementById("settings-panel"), state);
   setUpBackgroundPicker(document.getElementById("background-picker"), state, catalog);
 
-  // The editor listens on the live channel only to know whether a display is connected, so
-  // that the message after a Save can say what will happen.
-  let displayIsOnline = false;
-  openLiveChannel({
-    role: "editor",
-    onNews(name, details) {
-      if (name === "hello") displayIsOnline = details.display_online;
-      if (name === "display") displayIsOnline = details.online;
-    },
-  });
-
+  const saving = createSaving({ state, session, isDisplayOnline });
   setUpSaveBar(
     {
       saveButton: document.getElementById("save-button"),
@@ -120,18 +168,28 @@ async function startEditor() {
       unsavedMark: document.getElementById("unsaved-mark"),
     },
     state,
-    { isDisplayOnline: () => displayIsOnline },
+    saving,
+    { isDialogShowing: dialog.isShowing },
   );
 
-  setUpKeyboard(state);
+  // The Home link: with unsaved changes, it asks what should happen to them.
+  const leave = createLeaving({ state, saving, dialog, goHome });
+  document.getElementById("home-link").addEventListener("click", (event) => {
+    event.preventDefault();
+    leave();
+  });
+
+  setUpKeyboard(state, { isDialogShowing: dialog.isShowing });
   document.body.dataset.ready = "true";
 }
 
 /** Delete removes the selected widget, the arrow keys move it, Escape lets go of it. */
-function setUpKeyboard(state) {
+function setUpKeyboard(state, { isDialogShowing }) {
   const ARROW_STEPS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
   window.addEventListener("keydown", (event) => {
+    // While a dialog covers the editor, the keys are not for the widgets behind it.
+    if (isDialogShowing()) return;
     // Keys typed into a form field belong to the field.
     if (event.target.closest("input, select, textarea")) return;
     const widget = state.selectedWidget();

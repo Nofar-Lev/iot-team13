@@ -5,7 +5,9 @@ The layout these tests start from is the one that ships with the app. Its first 
 large clock on top, the date under it, the weather in the bottom left corner and the room's
 climate in the bottom right: there is room for a 2x1 widget, and none for a 2x2 or a 4x2.
 """
-from browser_fixtures import SMALL_PHONE, sideways
+import pytest
+
+from browser_fixtures import PHONES, SMALL_PHONE, eventually, sideways
 from phone_editor_helpers import (
     expect, open_phone_editor, panel, place_of, shown_screen, tap_cell, tap_wherever_it_is, widgets_on_preview,
 )
@@ -347,6 +349,7 @@ def test_save_layout_sends_the_layout_to_the_server(open_page, server):
     assert [widget["type"] for widget in saved["layout"]["screens"][0]["widgets"]] == [
         "clock", "date", "weather", "room_climate", "date",
     ]
+    assert server.read_draft() is None                             # nothing is unsaved any more
 
 
 def test_what_the_phone_saved_is_what_the_desktop_editor_opens(open_page):
@@ -360,9 +363,10 @@ def test_what_the_phone_saved_is_what_the_desktop_editor_opens(open_page):
     expect(desktop_editor.locator(".display__widgets > .widget")).to_have_count(5)
 
 
-def test_discard_asks_for_a_second_tap_and_then_undoes_the_changes(open_page):
+def test_discard_asks_for_a_second_tap_and_then_undoes_the_changes(open_page, server):
     editor = open_phone_editor(open_page)
     add_a_date_and_return_to_the_main_menu(editor)
+    eventually(server.read_draft)                                  # the change is in the server's draft
     discard = editor.locator("#discard-button")
 
     discard.tap()
@@ -374,100 +378,130 @@ def test_discard_asks_for_a_second_tap_and_then_undoes_the_changes(open_page):
     expect(discard).to_have_text("Discard")
     expect(discard).to_be_disabled()
     expect(editor.locator("#save-button")).to_be_disabled()
+    eventually(lambda: server.read_draft() is None)                # and the draft is gone from the server
 
 
 # --- Leaving with unsaved changes --------------------------------------------------------------------------------
 
-def dialog(page):
-    return page.locator("#unsaved-changes-dialog")
+def leaving_question(page):
+    return page.locator('#dialog[data-message="leaving-with-unsaved-changes"]')
+
+
+def choose(page, action):
+    page.locator(f'#dialog [data-action="{action}"]').tap()
+
+
+def editor_asked_about_leaving(open_page):
+    editor = open_phone_editor(open_page)
+    add_a_date_and_return_to_the_main_menu(editor)
+    editor.locator("#home-button").tap()
+    expect(leaving_question(editor)).to_be_visible()
+    return editor
 
 
 def test_home_asks_what_to_do_with_unsaved_changes(open_page):
     editor = open_phone_editor(open_page)
     add_a_date_and_return_to_the_main_menu(editor)
-    expect(dialog(editor)).to_be_hidden()
+    expect(editor.locator("#dialog")).to_be_hidden()
 
     editor.locator("#home-button").tap()
-    expect(dialog(editor)).to_be_visible()
-    expect(dialog(editor).locator(".dialog__title")).to_have_text("Unsaved changes")
-    expect(dialog(editor).locator(".dialog__button")).to_have_text(["Save", "Discard", "Return to the editor"])
+    question = leaving_question(editor)
+    expect(question.locator(".dialog__title")).to_have_text("You have unsaved changes")
+    expect(question.locator(".dialog__button-label")).to_have_text(["Keep as draft", "Save changes", "Discard changes"])
+    expect(question.locator(".dialog__button-explanation")).to_have_text([
+        "Finish later. The display stays as it is.",
+        "The display shows them now.",
+        "Your changes are erased.",
+    ])
+    expect(question.locator(".dialog__dismiss-line")).to_have_text("Return to the editor")
+    expect(question.locator(".dialog__close")).to_be_visible()
     expect(editor.locator("#editing-screen")).to_be_visible()      # still in the editor
 
 
-def test_the_three_choices_have_their_colours(open_page):
-    editor = open_phone_editor(open_page)
-    add_a_date_and_return_to_the_main_menu(editor)
-    editor.locator("#home-button").tap()
+def test_the_choices_have_their_colours(open_page):
+    editor = editor_asked_about_leaving(open_page)
 
-    def colours_of(button_id):
-        return editor.locator(f"#{button_id}").evaluate(
+    def colours_of(action):
+        return editor.locator(f'#dialog [data-action="{action}"]').evaluate(
             "element => { const s = getComputedStyle(element); return [s.backgroundColor, s.color]; }"
         )
 
-    assert colours_of("leave-and-save-button") == ["rgb(79, 91, 213)", "rgb(255, 255, 255)"]       # purple
-    assert colours_of("leave-and-discard-button") == ["rgb(245, 230, 228)", "rgb(138, 53, 54)"]    # maroon
-    assert colours_of("return-to-editor-button")[0] == "rgba(0, 0, 0, 0)"                          # clear
+    assert colours_of("keep-as-draft") == ["rgb(79, 91, 213)", "rgb(255, 255, 255)"]       # purple: the default
+    assert colours_of("save-changes") == ["rgb(236, 238, 253)", "rgb(63, 73, 184)"]        # pale purple
+    assert colours_of("discard-changes") == ["rgb(245, 230, 228)", "rgb(138, 53, 54)"]     # maroon
+    assert colours_of("dismiss")[0] == "rgba(0, 0, 0, 0)"                                  # a quiet line
 
 
-def test_return_to_the_editor_keeps_the_changes_and_stays(open_page):
-    editor = open_phone_editor(open_page)
+@pytest.mark.parametrize("phone", PHONES)
+def test_the_question_fits_the_screen_of_a_phone_held_sideways(open_page, phone):
+    """It is the tallest dialog of the editor, on the lowest screen there is."""
+    editor = open_phone_editor(open_page, viewport=sideways(phone))
     add_a_date_and_return_to_the_main_menu(editor)
     editor.locator("#home-button").tap()
-    editor.locator("#return-to-editor-button").tap()
 
-    expect(dialog(editor)).to_be_hidden()
+    box = leaving_question(editor).locator(".dialog").bounding_box()
+    assert box["y"] >= 0 and box["y"] + box["height"] <= sideways(phone)["height"]
+    assert box["x"] >= 0 and box["x"] + box["width"] <= sideways(phone)["width"]
+    for button in leaving_question(editor).locator("button").all():
+        assert button.bounding_box()["height"] >= 34               # large enough for a finger
+
+
+def stay_by_the_line(editor):
+    choose(editor, "dismiss")
+
+
+def stay_by_the_x(editor):
+    choose(editor, "dismiss-with-x")
+
+
+def stay_by_a_tap_beside_the_dialog(editor):
+    editor.touchscreen.tap(12, 12)                                 # a corner of the screen
+
+
+@pytest.mark.parametrize("stay", [stay_by_the_line, stay_by_the_x, stay_by_a_tap_beside_the_dialog])
+def test_every_quiet_way_out_returns_to_the_editor_with_the_changes(open_page, stay):
+    editor = editor_asked_about_leaving(open_page)
+
+    stay(editor)
+
+    expect(editor.locator("#dialog")).to_be_hidden()
+    expect(editor.locator("#editing-screen")).to_be_visible()
     expect(widgets_on_preview(editor)).to_have_count(5)
     expect(editor.locator("#save-button")).to_be_enabled()
+    editor.locator("#add-widget-button").tap()                     # and the editor can be used again
+    expect(panel(editor)).to_have_attribute("data-showing", "add-widget")
 
 
-def test_a_tap_beside_the_dialog_also_returns_to_the_editor(open_page):
-    editor = open_phone_editor(open_page)
-    add_a_date_and_return_to_the_main_menu(editor)
-    editor.locator("#home-button").tap()
-
-    editor.touchscreen.tap(12, 12)                                 # a corner of the screen, beside the dialog
-    expect(dialog(editor)).to_be_hidden()
-    expect(widgets_on_preview(editor)).to_have_count(5)
-    expect(editor.locator("#editing-screen")).to_be_visible()
-
-
-def test_discard_leaves_without_saving(open_page, server):
-    editor = open_phone_editor(open_page)
-    add_a_date_and_return_to_the_main_menu(editor)
-    editor.locator("#home-button").tap()
-    editor.locator("#leave-and-discard-button").tap()
+def test_keep_as_draft_leaves_and_the_changes_wait_on_the_server(open_page, server):
+    editor = editor_asked_about_leaving(open_page)
+    choose(editor, "keep-as-draft")
 
     editor.wait_for_url("**/")
     editor.wait_for_selector(".home-page")
     assert server.read_layout()["revision"] == 0                   # nothing was saved
+    assert len(server.read_draft()["screens"][0]["widgets"]) == 5  # and nothing was lost
 
 
-def test_save_saves_and_then_leaves(open_page, server):
-    editor = open_phone_editor(open_page)
-    add_a_date_and_return_to_the_main_menu(editor)
-    editor.locator("#home-button").tap()
-    editor.locator("#leave-and-save-button").tap()
+def test_discard_changes_leaves_without_saving(open_page, server):
+    editor = editor_asked_about_leaving(open_page)
+    choose(editor, "discard-changes")
+
+    editor.wait_for_url("**/")
+    editor.wait_for_selector(".home-page")
+    assert server.read_layout()["revision"] == 0
+    assert server.read_draft() is None
+
+
+def test_save_changes_saves_and_then_leaves(open_page, server):
+    editor = editor_asked_about_leaving(open_page)
+    choose(editor, "save-changes")
 
     editor.wait_for_url("**/")
     editor.wait_for_selector(".home-page")
     saved = server.read_layout()
     assert saved["revision"] == 1
     assert len(saved["layout"]["screens"][0]["widgets"]) == 5
-
-
-def test_when_the_save_fails_the_user_stays_in_the_editor_with_the_changes(open_page, server):
-    editor = open_phone_editor(open_page)
-    add_a_date_and_return_to_the_main_menu(editor)
-    server.stop()
-
-    editor.locator("#home-button").tap()
-    editor.locator("#leave-and-save-button").tap()
-
-    expect(toast(editor)).to_have_text("Could not reach the server. Nothing was saved.")
-    expect(dialog(editor)).to_be_hidden()
-    expect(editor.locator("#editing-screen")).to_be_visible()
-    expect(widgets_on_preview(editor)).to_have_count(5)
-    expect(editor.locator("#save-button")).to_be_enabled()
+    assert server.read_draft() is None
 
 
 def test_with_nothing_unsaved_home_does_not_ask(open_page):

@@ -2,6 +2,10 @@
 data/saved_layout.json
 data/saved_layout.tmp
 
+# The layout being worked on in the editor. It exists while there are unsaved changes.
+data/draft_layout.json
+data/draft_layout.tmp
+
 # Files Python and pytest create while running.
 __pycache__/
 .pytest_cache/

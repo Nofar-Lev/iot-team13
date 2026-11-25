@@ -8,6 +8,9 @@
 // to lose: Discard always (it is greyed out when nothing changed), and Remove this screen when
 // the screen has widgets on it. Home asks too, with a dialog of its own, which is not this
 // file's business: it only says that Home was pressed.
+//
+// Saving and discarding themselves are not this file's business either: both go through the
+// server (../editing/saving.js), and this file only says which button was pressed.
 
 import { el } from "../common/dom.js";
 import { icon } from "../common/icons.js";
@@ -26,9 +29,10 @@ function buttonWithIcon(className, id, iconName, text) {
  * state:           the editor's state (editing/editor_state.js).
  * onAddWidget(), onBackgrounds(): open those screens of the panel.
  * onSave():        save the layout.
+ * onDiscard():     go back to the saved layout. The second tap has already been given.
  * onGoHome():      Home was pressed.
  */
-export function createMainMenuScreen({ panel, state, onAddWidget, onBackgrounds, onSave, onGoHome }) {
+export function createMainMenuScreen({ panel, state, onAddWidget, onBackgrounds, onSave, onDiscard, onGoHome }) {
   const home = buttonWithIcon("panel__home", "home-button", "home", "Home");
   const addWidget = buttonWithIcon("menu-button", "add-widget-button", "plus", "Add widget");
   const backgrounds = buttonWithIcon("menu-button", "backgrounds-button", "backgrounds", "Backgrounds");
@@ -63,7 +67,7 @@ export function createMainMenuScreen({ panel, state, onAddWidget, onBackgrounds,
       usualText: "Discard",
       askingText: "Tap again",
       shouldAsk: () => true,
-      onConfirmed: () => state.discardChanges(),
+      onConfirmed: onDiscard,
     }),
   ];
 

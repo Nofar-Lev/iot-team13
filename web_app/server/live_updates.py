@@ -5,15 +5,20 @@ news; the code that serves the channel takes news from that line and sends it to
 
 Listeners say what they are. A "device" listener is a page that plays the part of the display,
 so "is the display online?" simply means "is at least one device listening?".
+
+Every listener gets an id of its own when it connects. News can be sent to everyone, or to one
+listener by its id: that is how one editor is asked to hand over to another.
 """
 from __future__ import annotations
 
 import queue
+import secrets
 import threading
 from typing import Any
 
 # What a listener may call itself.
 DEVICE = "device"
+EDITOR = "editor"
 LISTENER_ROLES = ("device", "home", "editor")
 
 # News items a slow page may fall behind by before new ones are dropped for it. A page that
@@ -29,6 +34,8 @@ class Listener:
 
     def __init__(self, role: str):
         self.role = role
+        # Made up by the server, and never used again after this listener is gone.
+        self.id = secrets.token_urlsafe(12)
         self._waiting_news: "queue.Queue[News]" = queue.Queue(maxsize=LONGEST_WAITING_LINE)
 
     def next_news(self, wait_seconds: float) -> News:
@@ -68,6 +75,18 @@ class LiveUpdates:
         """Send one piece of news to every connected page."""
         with self._lock:
             self._tell_everyone((name, details))
+
+    def tell(self, listener_id: str, name: str, details: dict[str, Any]) -> None:
+        """Send one piece of news to one connected page. Nothing happens if it is gone."""
+        with self._lock:
+            for listener in self._listeners:
+                if listener.id == listener_id:
+                    listener._hand_over((name, details))
+
+    def is_connected(self, listener_id: str, role: str) -> bool:
+        """Whether the page with this id is listening now, as what it says it is."""
+        with self._lock:
+            return any(listener.id == listener_id and listener.role == role for listener in self._listeners)
 
     def display_is_online(self) -> bool:
         with self._lock:

@@ -26,6 +26,13 @@ from server.widget_catalog import WidgetCatalog  # noqa: E402
 from browser_fixtures import browser, open_page, server  # noqa: E402, F401
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "take_over_seconds(seconds): how long the test's server gives an editor to answer a take-over",
+    )
+
+
 @pytest.fixture
 def config(tmp_path):
     """The real configuration, except that saving goes to a temporary folder."""

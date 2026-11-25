@@ -3,19 +3,8 @@ import queue
 
 import pytest
 
+from live_channel import NO_WAIT, waiting_news
 from server.live_updates import LiveUpdates
-
-NO_WAIT = 0.01
-
-
-def waiting_news(listener):
-    """Every piece of news waiting for a listener, oldest first."""
-    news = []
-    while True:
-        try:
-            news.append(listener.next_news(wait_seconds=NO_WAIT))
-        except queue.Empty:
-            return news
 
 
 def test_an_announcement_reaches_every_listener():
@@ -90,3 +79,40 @@ def test_a_page_that_stopped_reading_does_not_block_the_others():
         live_updates.announce("layout", {"revision": revision})
         healthy.next_news(wait_seconds=NO_WAIT)
     assert len(waiting_news(stuck)) < 500   # the stuck page lost news, and nothing broke
+
+
+def test_every_listener_has_an_id_of_its_own():
+    live_updates = LiveUpdates()
+    ids = {live_updates.add_listener("editor").id for _ in range(50)}
+    assert len(ids) == 50
+
+
+def test_news_for_one_listener_reaches_only_that_one():
+    live_updates = LiveUpdates()
+    first, second = live_updates.add_listener("editor"), live_updates.add_listener("editor")
+    live_updates.tell(first.id, "taken_over", {"changes": "none"})
+    assert waiting_news(first) == [("taken_over", {"changes": "none"})]
+    assert waiting_news(second) == []
+
+
+def test_news_for_a_listener_that_is_gone_is_dropped():
+    live_updates = LiveUpdates()
+    editor = live_updates.add_listener("editor")
+    live_updates.remove_listener(editor)
+    live_updates.tell(editor.id, "taken_over", {"changes": "none"})
+    assert waiting_news(editor) == []
+
+
+def test_a_listener_is_connected_until_it_is_removed():
+    live_updates = LiveUpdates()
+    editor = live_updates.add_listener("editor")
+    assert live_updates.is_connected(editor.id, "editor")
+    live_updates.remove_listener(editor)
+    assert not live_updates.is_connected(editor.id, "editor")
+
+
+def test_a_listener_is_only_connected_as_what_it_is():
+    live_updates = LiveUpdates()
+    home = live_updates.add_listener("home")
+    assert not live_updates.is_connected(home.id, "editor")
+    assert not live_updates.is_connected("made-up-id", "editor")

@@ -1,4 +1,4 @@
-// Tests for the grid arithmetic. Run with:  node --test js_tests/
+// Tests for the grid arithmetic. Run with:  node --test   (from the web_app folder)
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

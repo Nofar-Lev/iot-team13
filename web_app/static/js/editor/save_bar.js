@@ -1,48 +1,28 @@
 // The top bar's Save and Discard buttons, and the mark that says there are unsaved changes.
 
 import { askForSecondClick } from "../common/second_click.js";
-import { saveLayout } from "../common/server_api.js";
-import { showToast } from "../common/toast.js";
 
 /**
- * isDisplayOnline(): whether a display is connected right now, for the message after a Save.
+ * saving:           the editor's Save and Discard (../editing/saving.js).
+ * isDialogShowing(): whether a dialog covers the editor, so that Ctrl+S waits its turn.
  */
-export function setUpSaveBar({ saveButton, discardButton, unsavedMark }, state, { isDisplayOnline }) {
-  let isSaving = false;
-
+export function setUpSaveBar({ saveButton, discardButton, unsavedMark }, state, saving, { isDialogShowing }) {
   function refresh() {
     const hasChanges = state.hasUnsavedChanges();
-    saveButton.disabled = !hasChanges || isSaving;
-    discardButton.disabled = !hasChanges || isSaving;
+    saveButton.disabled = !hasChanges || saving.isBusy();
+    discardButton.disabled = !hasChanges || saving.isBusy();
     unsavedMark.hidden = !hasChanges;
   }
 
-  async function save() {
-    if (isSaving || !state.hasUnsavedChanges()) return;
-    isSaving = true;
+  /** Save or discard, with the buttons greyed out while the server is asked. */
+  async function run(saveOrDiscard) {
+    const whenDone = saveOrDiscard();
     refresh();
-    try {
-      const answer = await saveLayout(state.layout());
-      if (answer.saved) {
-        state.markSaved();
-        showToast(
-          isDisplayOnline()
-            ? "Saved. The display is updating."
-            : "Saved. The display is offline and will update when it reconnects.",
-          "success",
-        );
-      } else {
-        showToast(`The server refused the layout: ${answer.problems.join(" ")}`, "problem");
-      }
-    } catch {
-      showToast("Could not reach the server. Nothing was saved.", "problem");
-    } finally {
-      isSaving = false;
-      refresh();
-    }
+    await whenDone;
+    refresh();
   }
 
-  saveButton.addEventListener("click", save);
+  saveButton.addEventListener("click", () => run(saving.save));
 
   const discardQuestion = askForSecondClick({
     button: discardButton,
@@ -50,19 +30,14 @@ export function setUpSaveBar({ saveButton, discardButton, unsavedMark }, state, 
     usualText: "Discard changes",
     askingText: "Click again to discard",
     shouldAsk: () => true,
-    onConfirmed: () => state.discardChanges(),
+    onConfirmed: () => run(saving.discard),
   });
 
   window.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      save();
+      if (!isDialogShowing()) run(saving.save);
     }
-  });
-
-  // Leaving the page with unsaved changes: let the browser ask first.
-  window.addEventListener("beforeunload", (event) => {
-    if (state.hasUnsavedChanges()) event.preventDefault();
   });
 
   state.subscribe((kindOfChange) => {

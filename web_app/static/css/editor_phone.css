@@ -726,71 +726,42 @@
   font-weight: 600;
 }
 
-/* --- The question about unsaved changes --------------------------------------------------------- */
+/* --- Dialogs ----------------------------------------------------------------------------------- */
 
-/* Covers the editing screen, dimmed, with the dialog in its middle. */
+/* The dialog's look is in dialog.css, shared with the desktop editor. Here is only what a
+   phone needs.
+
+   A dialog can come up over the start screen, with the phone upright, or over the editing
+   screen, with the phone sideways. It keeps clear of the camera cut-out either way. */
 .dialog-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(30, 34, 51, 0.45);
+  padding:
+    max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
 }
 
-.dialog {
-  width: min(480px, 100%);
-  padding: 18px 20px 20px;
-  border-radius: 18px;
-  background: var(--surface);
-  color: var(--phone-ink);
-  box-shadow: 0 16px 48px rgba(30, 34, 51, 0.35);
+/* An upright phone is narrow: the buttons always go one under the other. */
+@media (orientation: portrait) {
+  .dialog__buttons {
+    flex-direction: column;
+  }
+
+  .dialog__buttons .dialog__button {
+    flex: none;
+  }
 }
 
-.dialog__title {
-  font-size: 18px;
-  font-weight: 600;
-}
+/* A sideways phone is low: the dialog is a little tighter, so that the tallest one (the
+   question on leaving) fits with room to spare. */
+@media (orientation: landscape) {
+  .dialog {
+    padding: 16px 18px;
+  }
 
-.dialog__text {
-  margin-top: 4px;
-  color: var(--ink-soft);
-}
-
-.dialog__buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.dialog__button {
-  flex: 1 1 auto;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* Save: the app's purple. Discard: the muted maroon of everything that throws work away.
-   Return to the editor: clear, with only an outline. */
-.dialog__button--save {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.dialog__button--discard {
-  background: #f5e6e4;
-  color: #8a3536;
-}
-
-.dialog__button--return {
-  border-color: var(--line);
-  background: transparent;
-  color: var(--phone-ink);
+  .dialog__buttons {
+    margin-top: 12px;
+  }
 }
 
 /* --- The phone held upright --------------------------------------------------------------------- */
