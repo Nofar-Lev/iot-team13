@@ -223,6 +223,7 @@ not allow is answered with status 409 and a `reason`:
 | `static/backgrounds/` | The six background pictures, 480x320 |
 | `static/fonts/` | The display's font, Outfit, with its licence (SIL Open Font License) |
 | `tools/make_backgrounds.py` | The script that drew the backgrounds (needs Pillow and numpy). A new version of a picture gets a new file name; see "Pictures are kept by browsers" above |
+| `tools/take_screenshots.py`, `tools/screenshots/` | Takes the screenshots that the documents use, from the app itself: see "The documents' screenshots" below |
 | `tests/` | Tests for the server, and tests that drive the pages in a browser, as a desktop and as a phone, with one editor and with several at once. `browser_fixtures.py`, `phone_editor_helpers.py` and `live_channel.py` hold what they share |
 | `js_tests/` | Tests for the logic of the pages: the grid, the rules of editing, the editing session and its messages, what counts as a swipe, time and units |
 | `package.json` | Only tells Node that the `.js` files are modules. There are no packages to install |
@@ -256,3 +257,26 @@ That runs three kinds of test, and takes about four minutes with all of them:
 
 The tests save only into a temporary folder. The browser tests start the server on this
 computer only, and nothing reaches the internet.
+
+## The documents' screenshots
+
+The screenshots in `Documentation/` are of the app itself, and a script takes them:
+
+```
+py tools/take_screenshots.py
+```
+
+It starts the server by itself, on this computer only and with data of its own, opens the
+pages in a browser without a window as a laptop and as a phone, plays the situations the
+pictures need (a second editor opening, a take-over timer running out, a lost server), and
+saves the pictures into the folder of the document they belong to. It needs Playwright, like
+the browser tests, and takes about half a minute.
+
+Run it again when something in the pictures changes its look, and look at the new pictures
+before keeping them. Every page is told that it is the same moment, 10:30 on 10 March, so a
+retaken picture only differs where the app does.
+
+The pictures are grouped in sets, one per document. `py tools/take_screenshots.py --list`
+names them, and a name after the command takes only that set. To add a set, write a file in
+`tools/screenshots/` that says where its pictures go and plays its scenes, the way
+`one_editor_at_a_time.py` does, and add it to the list in `take_screenshots.py`.
