@@ -26,8 +26,8 @@ you should see when it works.
 
 | Part | Test | What it checks | What you should see |
 |---|---|---|---|
-| Screen | [`screen/green_test`](screen/green_test/green_test.ino) | The ESP32 can talk to the display's driver chip (ILI9488) and draw on it | A black screen with one green rectangle |
-| Screen | [`screen/touch_test`](screen/touch_test/touch_test.ino) | The touch chip (XPT2046) reports where the screen is pressed, on the same wires the display uses | A green dot wherever you press, and a `Touch at x=... y=...` line in the Serial Monitor |
+| Old Screen ILI9488 | [`old-screen/green_test`](screen/green_test/green_test.ino) | The ESP32 can talk to the display's driver chip (ILI9488) and draw on it | A black screen with one green rectangle |
+| Old Screen ILI9488 | [`old-screen/touch_test`](screen/touch_test/touch_test.ino) | The touch chip (XPT2046) reports where the screen is pressed, on the same wires the display uses | A green dot wherever you press, and a `Touch at x=... y=...` line in the Serial Monitor |
 
 Run them in this order. The touch test assumes the display already works.
 
