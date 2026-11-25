@@ -8,3 +8,4 @@ The wiring diagram and the instructions for operating the project.
   edge cases they handle.
   * `one_editor_at_a_time.md`: what happens when the display editor is open in two places at
     once.
+  * `screenshots`: the pictures that document uses, taken from the app itself.

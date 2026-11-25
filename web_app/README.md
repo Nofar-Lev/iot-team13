@@ -7,6 +7,10 @@ user decides what the device shows by putting widgets onto a picture of its scre
 device redraws when they save. The app works in a desktop browser and on a phone. There is no
 hardware yet, so a web page plays the part of the device.
 
+The editor can be open in several places, and only one of them is in use at a time. Unsaved
+work is kept on the server as a draft, so a closed tab or a lost connection does not lose it.
+See "One editor at a time" below.
+
 ## What is in it
 
 | Page | Address | What it is |
@@ -18,8 +22,8 @@ hardware yet, so a web page plays the part of the device.
 
 What is real and what is not:
 
-- **Real:** the two editors, saving, the live update of the device page, the connection state,
-  the clock and the date.
+- **Real:** the two editors, the draft and saving, taking over from another editor, the live
+  update of the device page, the connection state, the clock and the date.
 - **Example data:** the weather, the stock price, the exchange rates, the room's temperature
   and humidity, and the reminders. All of it comes from one file, `data/demo_data.json`.
   The settings are real: the city, the stock symbol and the units that the user picks are
@@ -29,7 +33,9 @@ What is real and what is not:
 
 The Edit button of the home page opens it. It starts with "Loading editor...", and then one
 button, **Open the editor**: a browser only lets a page go full screen as the answer to a tap.
-The tap switches to full screen and turns the picture sideways.
+The tap switches to full screen and turns the picture sideways. If the editor is in use
+somewhere else, or unsaved changes were left behind, it asks about that first, before the
+button.
 
 | To | Do this |
 |---|---|
@@ -43,11 +49,32 @@ The tap switches to full screen and turns the picture sideways.
 | Remove a screen | **Remove this screen**. It asks for a second tap if the screen has widgets on it |
 | Choose a background | **Backgrounds**, then tap one |
 | Save | **Save layout**. **Discard** goes back to what was saved, after a second tap |
-| Leave | **Home**. With unsaved changes it asks: Save, Discard, or Return to the editor |
+| Leave | **Home**. With unsaved changes it asks: Keep as draft, Save changes, Discard changes, or Return to the editor |
 
 It was made for Android phones and tried on one. An iPhone's browser gives a page neither full
 screen nor a say over rotation: there the editor asks for the phone to be turned, and works
 under the browser's bars.
+
+### One editor at a time
+
+Both editors follow the same rules. The reasons for them, with screenshots, are in
+`Documentation/web_app_design_decisions/one_editor_at_a_time.md`.
+
+- **Every change goes to the server's draft** as it is made. The device and the home page go
+  on showing the saved layout until Save.
+- **Only one editor is in use.** A second one that opens takes over at once if the first has
+  nothing unsaved; the first is told.
+- **If the first has unsaved changes,** the second chooses: take over and continue them, take
+  over and discard them, or leave. The first is then asked to approve or refuse, with a
+  20-second timer on both sides. No answer counts as approval.
+- **A draft that was left behind** (a closed tab, a dead battery) is offered to the next editor
+  that opens: resume it or discard it.
+- **An editor that loses the server stops,** says so, and offers to reload. It does not
+  reconnect by itself. After the reload it is a new editor, by the same rules.
+- **Home asks** what should happen to unsaved changes: keep them as a draft, save them, or
+  discard them. Closing the tab asks nothing and keeps the draft.
+
+To see it, open `/editor` in two tabs, change something in the first, and look at the second.
 
 ## Run it
 
@@ -92,8 +119,9 @@ The server then answers on that address only. `http://localhost:23634` stops wor
 the same computer: open `http://192.168.1.20:23634` there too. The server prints the addresses
 that work when it starts.
 
-**Starting over.** The saved layout is kept in `data/saved_layout.json` (not in the
-repository). Delete that file to go back to the layout the app starts with.
+**Starting over.** The saved layout is kept in `data/saved_layout.json`, and unsaved work in
+`data/draft_layout.json` while there is any (neither is in the repository). Stop the server
+and delete both files to go back to the layout the app starts with.
 
 ## How it fits together
 
@@ -109,8 +137,17 @@ repository). Delete that file to go back to the layout the app starts with.
 - **Two editors, one set of rules.** The desktop editor and the phone editor are separate
   pages, each with its own styles and its own code for arrangement and gestures. No file asks
   "is this a phone?". What they share is only what is exactly the same for both
-  (`static/js/editing/`): the rules of editing, the form of a widget's settings, and the small
-  pictures of widgets.
+  (`static/js/editing/`): the rules of editing, the form of a widget's settings, the small
+  pictures of widgets, and everything about one editor at a time.
+- **The server keeps the rules of one editor at a time** (`server/one_editor_at_a_time.py`):
+  which editor is the one in use, the draft, and the take-over with its timer. Only the editor
+  in use can change the draft, save or discard, and the server has no other way to save a
+  layout, so a page cannot go around the rules.
+- **An editor page's part in those rules is the editing session**
+  (`static/js/editing/editing_session.js`). It asks to be the editor in use, sends every change
+  to the draft one at a time, and tells the page its situation by name ("editing",
+  "asked_to_hand_over", "connection_lost"). The messages' wording (`session_messages.js`) and
+  the dialog (`dialog.js`) are shared too; each editor only gives the dialog its place.
 - **The server chooses the editor** (`server/which_editor.py`). Both are at `/editor`. A
   browser on a phone says so in the label it sends with every request, and gets the phone
   editor; everything else, tablets included, gets the desktop editor.
@@ -120,7 +157,9 @@ repository). Delete that file to go back to the layout the app starts with.
   is what the device will trust.
 - **The live channel** (`/api/events`) is one connection that a page keeps open. The server
   pushes news down it: "a layout was saved", "the display went online or offline". Nothing
-  polls.
+  polls. To the server, an editor is its live channel: it is given its id when the channel
+  opens, and is gone when it closes. That is how the server knows whether the other editor is
+  still there, and why a reloaded editor counts as a new one.
 - **Pictures are kept by browsers.** A browser may keep the background pictures and the font
   for a day, so they are there at once on the next visit. It asks about pages, styles and
   scripts every time, so an edit to one of those shows on the next refresh. For that reason
@@ -146,9 +185,22 @@ Both editors' lists, the settings form and the server's checks pick it up from t
 | `/static/...` | The files the pages load |
 | `GET /api/catalog` | The widget catalog: widgets, grid, backgrounds |
 | `GET /api/layout` | The saved layout, its revision number and when it was saved |
-| `PUT /api/layout` | Checks a layout. Saves it and tells the connected pages, or answers with what is wrong |
-| `GET /api/events?role=device` | The live channel. `role` is `device`, `home` or `editor` |
+| `GET /api/events?role=device` | The live channel. `role` is `device`, `home` or `editor`. An editor is given its id in the first news |
 | `GET /api/demo-data` | The example values |
+
+The addresses an editor calls. Each request carries the editor's id, and one that the rules do
+not allow is answered with status 409 and a `reason`:
+
+| Address | What it does |
+|---|---|
+| `POST /api/editing/enter` | A newly opened editor asks to be the one in use. The answer is its situation: editing (with the saved layout and the draft), a draft that was left behind, another editor with unsaved changes, or a take-over in progress |
+| `POST /api/editing/draft-left-behind` | Its choice about a draft it found: resume it or discard it |
+| `PUT /api/editing/draft` | The editor in use changed something: the layout as it is now. It is checked like every layout |
+| `POST /api/editing/save` | The draft becomes the saved layout, and the connected pages are told |
+| `POST /api/editing/discard` | The draft is erased |
+| `POST /api/editing/take-over` | Ask the editor in use to hand over, continuing its changes or discarding them |
+| `POST /api/editing/take-over/approve`, `.../refuse` | The answer of the editor in use |
+| `POST /api/editing/leave` | An editor page is going away |
 
 ## What is where
 
@@ -160,19 +212,19 @@ Both editors' lists, the settings form and the server's checks pick it up from t
 | `data/default_layout.json` | The layout shown before anything was saved |
 | `data/demo_data.json` | **Example data only.** Stands in for the real data sources until they exist |
 | `static/home.html`, `editor.html`, `editor_phone.html`, `device.html` | The pages. The editor has two: one for a desktop, one for a phone |
-| `static/css/` | Styles: `display.css` for the display and its widgets, `base.css` for what the pages share, and one file per page (`editor.css` for the desktop editor, `editor_phone.css` for the phone editor) |
+| `static/css/` | Styles: `display.css` for the display and its widgets, `base.css` for what the pages share, one file per page (`editor.css` for the desktop editor, `editor_phone.css` for the phone editor), and `dialog.css` for the dialog that both editors show |
 | `static/js/common/` | Shared by the pages: talking to the server, the live channel, grid arithmetic, icons |
 | `static/js/display/` | The drawing module, with one file per widget in `widgets/` |
-| `static/js/editing/` | What the two editors share: the rules of editing a layout, the form of a widget's settings, and the small pictures of widgets |
-| `static/js/editor/` | The desktop editor: the widget list, dragging, screens, settings, backgrounds, saving |
-| `static/js/editor_phone/` | The phone editor, one file per part. `phone_editor_main.js` lists them all: the start screen and full screen, the preview and what a touch on it means (tap, swipe, press and hold), carrying a widget, moving between screens, the panel and its screens, saving, and leaving with unsaved changes |
+| `static/js/editing/` | What the two editors share: the rules of editing a layout, the form of a widget's settings, the small pictures of widgets, and one editor at a time (the editing session, the sender that keeps the draft up to date, the messages and their dialog, Save and Discard, and leaving with unsaved changes) |
+| `static/js/editor/` | The desktop editor: the widget list, dragging, screens, backgrounds, the Save and Discard buttons |
+| `static/js/editor_phone/` | The phone editor, one file per part. `phone_editor_main.js` lists them all: the start screen and full screen, the preview and what a touch on it means (tap, swipe, press and hold), carrying a widget, moving between screens, the panel and its screens |
 | `static/js/device/` | The device page: connection icon, switching screens, full screen |
 | `static/js/home/` | The home page: the display card (real) and the sample sections |
 | `static/backgrounds/` | The six background pictures, 480x320 |
 | `static/fonts/` | The display's font, Outfit, with its licence (SIL Open Font License) |
 | `tools/make_backgrounds.py` | The script that drew the backgrounds (needs Pillow and numpy). A new version of a picture gets a new file name; see "Pictures are kept by browsers" above |
-| `tests/` | Tests for the server, and tests that drive the pages in a browser, as a desktop and as a phone. `browser_fixtures.py` and `phone_editor_helpers.py` hold what they share |
-| `js_tests/` | Tests for the logic of the pages: the grid, the rules of editing, what counts as a swipe, time and units |
+| `tests/` | Tests for the server, and tests that drive the pages in a browser, as a desktop and as a phone, with one editor and with several at once. `browser_fixtures.py`, `phone_editor_helpers.py` and `live_channel.py` hold what they share |
+| `js_tests/` | Tests for the logic of the pages: the grid, the rules of editing, the editing session and its messages, what counts as a swipe, time and units |
 | `package.json` | Only tells Node that the `.js` files are modules. There are no packages to install |
 
 ## Run the tests
@@ -182,17 +234,20 @@ py -m pip install pytest
 py -m pytest
 ```
 
-That runs three kinds of test, and takes about two minutes with all of them:
+That runs three kinds of test, and takes about four minutes with all of them:
 
-- **The server's tests.** Always run.
+- **The server's tests.** Always run. The rules of one editor at a time are tried with a clock
+  that the tests move, so nothing waits for the 20-second timer.
 - **The pages' logic tests** (`js_tests/`). They need Node.js and are skipped without it.
   They can also be run alone, from this folder: `node --test`. (With nothing after it, Node
   finds the test files by itself. Given the folder's name, some versions of Node fail.)
 - **Tests that use the pages in a real browser.** As a desktop: dragging, saving, watching the
   device page redraw, stopping and restarting the server. As a phone, with real touches: the
   home page upright and sideways, and the whole phone editor (taps, swipes, press and hold,
-  the panel's screens, loading, saving and leaving). They need Playwright and are skipped
-  without it:
+  the panel's screens, loading, saving and leaving). And with several editors open at once:
+  two laptops, a phone and a laptop, several phones, taking over, refusing, letting the timer
+  run out, and losing the server in the middle. They need Playwright and are skipped without
+  it:
 
   ```
   py -m pip install playwright
