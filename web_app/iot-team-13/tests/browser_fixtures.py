@@ -25,6 +25,11 @@ import pytest
 
 TESTS_DIR = Path(__file__).resolve().parent
 
+# The server's own configuration says at which path the app is served.
+if str(TESTS_DIR.parent) not in sys.path:
+    sys.path.insert(0, str(TESTS_DIR.parent))
+from server.config import ServerConfig  # noqa: E402
+
 # What a phone's browser says it is. The server reads this label to tell a phone from a desktop.
 ANDROID_PHONE_LABEL = (
     "Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -52,14 +57,20 @@ def sideways(phone: tuple) -> dict:
 class RunningServer:
     """The real server, as a separate program that a test can stop and start again."""
 
-    def __init__(self, saved_layout_path: Path, take_over_seconds: float = None):
+    def __init__(self, saved_layout_path: Path, take_over_seconds: float = None, app_path: str = None):
         self.saved_layout_path = saved_layout_path
+        # None leaves the app at the path it is usually served at.
+        self._app_path = app_path
         # The unsaved work of the editor in use. The file exists only while something is unsaved.
         self.draft_layout_path = saved_layout_path.with_name("draft_layout.json")
         # None leaves the server's own time for answering a take-over as it is.
         self._take_over_seconds = take_over_seconds
         self.port = self._free_port()
-        self.address = f"http://127.0.0.1:{self.port}"
+        # The bare address of the server, and the address of the app, which lives under a path.
+        # The tests open pages at self.address + "/editor" and the like.
+        self.bare_address = f"http://127.0.0.1:{self.port}"
+        served_at = ServerConfig().app_path if app_path is None else app_path
+        self.address = self.bare_address + served_at.rstrip("/")
         self._process = None
 
     @staticmethod
@@ -72,7 +83,8 @@ class RunningServer:
         self._process = subprocess.Popen(
             [sys.executable, str(TESTS_DIR / "serve_with_temporary_data.py"),
              str(self.port), str(self.saved_layout_path),
-             *([str(self._take_over_seconds)] if self._take_over_seconds is not None else [])],
+             *(["--take-over-seconds", str(self._take_over_seconds)] if self._take_over_seconds is not None else []),
+             *(["--app-path", self._app_path] if self._app_path is not None else [])],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         deadline = time.monotonic() + 15

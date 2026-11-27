@@ -42,7 +42,7 @@ export function createDisplayView({ catalog, demoData }) {
 
   function showScreen(screen) {
     const backgroundFile = backgroundFiles.get(screen.background);
-    display.style.backgroundImage = backgroundFile ? `url("/static/backgrounds/${backgroundFile}")` : "none";
+    display.style.backgroundImage = backgroundFile ? `url("static/backgrounds/${backgroundFile}")` : "none";
 
     shownWidgets = screen.widgets.map((widget, index) => {
       const drawn = createWidget(widget, { cellPixels, demoData });
@@ -81,7 +81,7 @@ const backgroundsFetchedAhead = new Map();
  */
 export function preloadBackgrounds(catalog) {
   const arrivals = catalog.backgrounds.map((background) => {
-    const address = `/static/backgrounds/${background.file}`;
+    const address = `static/backgrounds/${background.file}`;
     if (!backgroundsFetchedAhead.has(address)) {
       const picture = new Image();
       const arrival = new Promise((done) => {

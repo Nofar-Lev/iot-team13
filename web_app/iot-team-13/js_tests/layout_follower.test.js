@@ -1,5 +1,5 @@
 // Tests for the helper that keeps a page's copy of the layout up to date.
-// Run with:  node --test   (from the web_app folder)
+// Run with:  node --test   (from the app's folder, web_app/iot-team-13)
 //
 // The server is replaced by a stand-in: a function that answers "fetch" with whatever
 // revision the test says the server has. Nothing here uses the network.

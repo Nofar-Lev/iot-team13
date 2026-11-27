@@ -34,6 +34,10 @@ def seconds_a_browser_may_keep(file_path: str):
 
 # Address, the page's name, and the file that holds it. The editor is not in this list: it has
 # two pages at one address, and which_editor.py chooses between them.
+#
+# The addresses here are inside the app; app.py puts the app's path in front of them. Every
+# page sits directly under that path, never deeper. The pages rely on it: their addresses are
+# relative ("static/css/home.css", "api/layout"), which is right only one level down.
 PAGES = [
     ("/", "home", "home.html"),
     ("/device", "device", "device.html"),

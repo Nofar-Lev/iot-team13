@@ -19,7 +19,7 @@ export function createBackgroundsScreen({ panel, state, catalog, onBack }) {
       swatch.type = "button";
       swatch.dataset.backgroundId = background.id;
       swatch.setAttribute("aria-pressed", String(isCurrent));
-      swatch.style.backgroundImage = `url("/static/backgrounds/${background.file}")`;
+      swatch.style.backgroundImage = `url("static/backgrounds/${background.file}")`;
       swatch.addEventListener("click", () => state.setBackground(background.id));
       swatches.append(swatch);
     }

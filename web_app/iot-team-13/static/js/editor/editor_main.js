@@ -86,7 +86,7 @@ async function startEditor() {
   /** Leave for the home page. The server is told first, so that it knows at once. */
   async function goHome() {
     await session.leave();
-    window.location.href = "/";
+    window.location.href = "./";   // the home page: the top of the app, wherever the app is served
   }
 
   session.start();

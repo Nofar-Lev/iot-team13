@@ -50,13 +50,13 @@ def editor_as_sent(client, address="/editor", label=None):
 
 def test_a_desktop_browser_is_sent_the_desktop_editor(client):
     page = editor_as_sent(client, label=WINDOWS_DESKTOP).get_data(as_text=True)
-    assert "/static/js/editor/editor_main.js" in page
+    assert 'src="static/js/editor/editor_main.js"' in page
     assert "editor_phone" not in page
 
 
 def test_a_phone_is_sent_the_phone_editor(client):
     page = editor_as_sent(client, label=ANDROID_PHONE).get_data(as_text=True)
-    assert "/static/js/editor_phone/phone_editor_main.js" in page
+    assert 'src="static/js/editor_phone/phone_editor_main.js"' in page
 
 
 def test_the_address_can_ask_for_either_editor(client):

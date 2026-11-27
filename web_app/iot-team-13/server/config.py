@@ -18,6 +18,12 @@ class ServerConfig:
     # (run_server.py insists on --port), so the server never lands on a port by accident.
     port: Optional[int] = None
 
+    # The path the app is served at, on a laptop and online alike: its home page is at
+    # http://<host>:<port>/iot-team-13/. This is the only place that names it. The pages, the
+    # scripts and the styles never mention it: every address in them is relative, so they work
+    # under any path. An empty string puts the app at the top of the address.
+    app_path: str = "/iot-team-13"
+
     # How often the live channel sends a "nothing happened" message, in seconds. It is what
     # lets a page notice within a few seconds that the server is gone, and the other way round.
     heartbeat_seconds: float = 2.0

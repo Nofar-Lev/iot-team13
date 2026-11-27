@@ -135,18 +135,23 @@ def addresses_of_this_computer() -> list[str]:
 
 
 def where_to_open(config: ServerConfig, computer_addresses: list[str]) -> tuple[str, list[str]]:
-    """The address to open on this computer, and the addresses a phone can use.
+    """The app's address to open on this computer, and the addresses a phone can use.
+
+    The app lives under a path (config.app_path), and the addresses include it. The bare
+    address, without the path, forwards there.
 
     Which addresses work depends on where the server listens. Told to listen on one address
     only, it answers on that address and on no other: "localhost" then does NOT work, even on
     this computer.
     """
+    def app_at(host: str) -> str:
+        return f"http://{host}:{config.port}{config.app_path.rstrip('/')}"
+
     if config.host in EVERY_NETWORK:
-        return f"http://localhost:{config.port}", [f"http://{a}:{config.port}" for a in computer_addresses]
+        return app_at("localhost"), [app_at(address) for address in computer_addresses]
     if config.host in THIS_COMPUTER_ONLY:
-        return f"http://localhost:{config.port}", []
-    only_address = f"http://{config.host}:{config.port}"
-    return only_address, [only_address]
+        return app_at("localhost"), []
+    return app_at(config.host), [app_at(config.host)]
 
 
 def print_where_to_open(config: ServerConfig) -> None:

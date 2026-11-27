@@ -7,8 +7,8 @@ cannot be loaded, or one that would save its pictures outside the repository.
 import sys
 from pathlib import Path
 
-WEB_APP_DIR = Path(__file__).resolve().parent.parent
-REPOSITORY_DIR = WEB_APP_DIR.parent
+WEB_APP_DIR = Path(__file__).resolve().parent.parent   # web_app/iot-team-13
+REPOSITORY_DIR = WEB_APP_DIR.parent.parent
 sys.path.insert(0, str(WEB_APP_DIR / "tools"))
 
 import take_screenshots  # noqa: E402

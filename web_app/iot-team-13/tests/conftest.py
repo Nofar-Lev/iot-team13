@@ -17,9 +17,32 @@ WEB_APP_DIR = Path(__file__).resolve().parent.parent
 if str(WEB_APP_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_APP_DIR))
 
+from flask import Flask  # noqa: E402
+from flask.testing import FlaskClient  # noqa: E402
+
 from server.app import create_app  # noqa: E402
 from server.config import ServerConfig  # noqa: E402
 from server.widget_catalog import WidgetCatalog  # noqa: E402
+
+
+class ClientInsideTheApp(FlaskClient):
+    """The stand-in browser of the tests. It speaks to the app by addresses inside the app
+    ("/api/layout", "/editor") and puts the path the app is served at in front of them, the
+    way a browser does that opened the app at its real address. So a test reads the same
+    wherever the app is served, and still goes through the real path every time.
+
+    A test about addresses outside the app (the bare address that forwards) uses a plain
+    werkzeug.test.Client, which adds nothing.
+    """
+
+    def open(self, *args, **kwargs):
+        if args and isinstance(args[0], str) and args[0].startswith("/"):
+            args = (self.application.config["APP_PATH"] + args[0], *args[1:])
+        return super().open(*args, **kwargs)
+
+
+# Every app that a test builds hands out this client from test_client().
+Flask.test_client_class = ClientInsideTheApp
 
 # The fixtures of the browser tests: the real server as a separate program, and browser windows.
 # Importing them here is what lets every test file use them.

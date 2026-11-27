@@ -12,7 +12,7 @@ export function setUpBackgroundPicker(listElement, state, catalog) {
     button.title = background.name;
 
     const picture = el("img", "background-choice__picture");
-    picture.src = `/static/backgrounds/${background.file}`;
+    picture.src = `static/backgrounds/${background.file}`;
     picture.alt = "";
     picture.draggable = false;
 

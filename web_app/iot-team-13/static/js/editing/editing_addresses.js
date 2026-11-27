@@ -13,7 +13,7 @@
  * Throws if the server cannot be reached at all.
  */
 export async function askEditingServer(address, editorId, more = {}, method = "POST") {
-  const response = await fetch(`/api/editing/${address}`, {
+  const response = await fetch(`api/editing/${address}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ editor: editorId, ...more }),
@@ -35,5 +35,5 @@ export async function askEditingServer(address, editorId, more = {}, method = "P
  * when an ordinary request would be cut off: the browser sends this one on its own time.
  */
 export function tellServerThisEditorIsLeaving(editorId) {
-  navigator.sendBeacon("/api/editing/leave", JSON.stringify({ editor: editorId }));
+  navigator.sendBeacon("api/editing/leave", JSON.stringify({ editor: editorId }));
 }

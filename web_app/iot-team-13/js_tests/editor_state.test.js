@@ -1,5 +1,5 @@
 // Tests for the editor's state: what happens to the layout when the user adds, moves and
-// removes things. Run with:  node --test   (from the web_app folder)
+// removes things. Run with:  node --test   (from the app's folder, web_app/iot-team-13)
 //
 // They use the real widget catalog and the real default layout.
 

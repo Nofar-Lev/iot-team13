@@ -1,4 +1,4 @@
-// Tests for what counts as a swipe between screens. Run with:  node --test   (from the web_app folder)
+// Tests for what counts as a swipe between screens. Run with:  node --test   (from the app's folder, web_app/iot-team-13)
 
 import assert from "node:assert/strict";
 import { test } from "node:test";

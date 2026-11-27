@@ -1,5 +1,5 @@
 // Tests for the sender that keeps the server's draft up to date.
-// Run with:  node --test   (from the web_app folder)
+// Run with:  node --test   (from the app's folder, web_app/iot-team-13)
 //
 // The server is replaced by a stand-in whose answers wait until the test lets them through,
 // so the tests can make changes while a layout is still on its way.

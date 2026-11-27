@@ -1,5 +1,5 @@
 // Tests for an editor page's part in "one editor at a time": the editing session.
-// Run with:  node --test   (from the web_app folder)
+// Run with:  node --test   (from the app's folder, web_app/iot-team-13)
 //
 // The server and the live channel are replaced by stand-ins. A test decides what the server
 // answers, sends news down the channel, and looks at what the page was told and what the

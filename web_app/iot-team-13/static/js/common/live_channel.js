@@ -67,7 +67,7 @@ export function openLiveChannel({ role, onNews, onConnectionChange = () => {}, t
 
   function connect() {
     if (isClosedForGood) return;
-    source = new EventSource(`/api/events?role=${encodeURIComponent(role)}`);
+    source = new EventSource(`api/events?role=${encodeURIComponent(role)}`);
     source.onerror = connectionLost;
     for (const name of NEWS_NAMES) {
       source.addEventListener(name, (event) => {

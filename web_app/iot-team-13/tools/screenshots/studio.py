@@ -13,8 +13,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-WEB_APP_DIR = Path(__file__).resolve().parent.parent.parent
-REPOSITORY_DIR = WEB_APP_DIR.parent
+WEB_APP_DIR = Path(__file__).resolve().parent.parent.parent   # web_app/iot-team-13
+REPOSITORY_DIR = WEB_APP_DIR.parent.parent
 
 # The tests already know how to run the real server as a separate program, and what a phone's
 # browser says it is. The studio uses the same code, so the two cannot drift apart.

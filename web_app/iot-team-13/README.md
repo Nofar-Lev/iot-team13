@@ -13,6 +13,10 @@ See "One editor at a time" below.
 
 ## What is in it
 
+The whole app is served under one path, `/iot-team-13`, on a laptop and online alike: its home
+page is `http://localhost:<port>/iot-team-13/`. The addresses below are inside the app, after
+that path. Opening the bare address, `http://localhost:<port>`, forwards to the app.
+
 | Page | Address | What it is |
 |---|---|---|
 | Home | `/` | A picture of what the display shows now, whether the display is connected, and an Edit button. Its other sections are marked **Sample**: they show example data and are not built yet. One page for a desktop and a phone; it adapts to the window |
@@ -95,7 +99,8 @@ On Linux or macOS, use `python3` in place of `py`.
 it says that too and suggests another.
 
 Then open `http://localhost:<port>` on the same computer (http://localhost:23634 for the
-command above). Stop the server with Ctrl+C.
+command above). It forwards to the app, at `http://localhost:23634/iot-team-13/`. Stop the
+server with Ctrl+C.
 
 **On a phone.** The phone must be on a network that reaches the computer. When the server
 starts it prints this computer's addresses. Open `http://<the computer's address>:<port>` on
@@ -103,8 +108,8 @@ the phone for the app, and the same with `/device` at the end for the device pag
 time, Windows Firewall may ask whether Python may accept connections; the phone cannot reach
 the server until that is allowed.
 
-**The phone editor on a computer.** Open `http://localhost:<port>/editor?view=phone`. In the
-same way, `/editor?view=desktop` shows the desktop editor on a phone.
+**The phone editor on a computer.** Open `http://localhost:<port>/iot-team-13/editor?view=phone`.
+In the same way, `editor?view=desktop` shows the desktop editor on a phone.
 
 **Who can open it.** There is no sign-in. While the server runs, anyone who can reach the
 computer on the server's port can open the pages and change the layout, so run it on a network you
@@ -125,6 +130,15 @@ and delete both files to go back to the layout the app starts with.
 
 ## How it fits together
 
+- **One path, and relative addresses.** The app is served under `/iot-team-13`, and that name
+  is written in exactly one place: `app_path` in `server/config.py`. The pages, scripts and
+  styles never mention it. Every address in them is relative (`static/css/home.css`,
+  `api/layout`), never one that starts with a slash, so the app works under any path. An
+  address that starts with a slash points at the top of the site, outside the app, and finds
+  nothing there. Two things keep this true: a test that reads every page, script and style
+  for such an address (`tests/test_addresses_are_relative.py`), and a browser test that tours
+  the pages with the app served at four different paths. For the same reason every page sits
+  directly under the app's path, never deeper.
 - **The layout** is a small piece of JSON: which screens exist, which background each has, and
   which widgets sit where, with which settings. Positions are in grid cells, not pixels. The
   editor produces it, the server checks and stores it, and the device draws it. It is the
@@ -177,6 +191,9 @@ and delete both files to go back to the layout the app starts with.
 Both editors' lists, the settings form and the server's checks pick it up from the catalog.
 
 ## The server's addresses
+
+All of them are inside the app, after `/iot-team-13`. Outside that path the server answers
+only the bare address, which forwards to the app.
 
 | Address | What it does |
 |---|---|
@@ -237,7 +254,8 @@ py -m pytest
 
 That runs three kinds of test, and takes about four minutes with all of them:
 
-- **The server's tests.** Always run. The rules of one editor at a time are tried with a clock
+- **The server's tests.** Always run. They include the check that no address in a page, a
+  script or a style starts with a slash. The rules of one editor at a time are tried with a clock
   that the tests move, so nothing waits for the 20-second timer.
 - **The pages' logic tests** (`js_tests/`). They need Node.js and are skipped without it.
   They can also be run alone, from this folder: `node --test`. (With nothing after it, Node

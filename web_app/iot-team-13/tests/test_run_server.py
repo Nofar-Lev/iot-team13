@@ -106,19 +106,25 @@ WITH_A_PORT = replace(ServerConfig(), port=23633)
 
 def test_listening_everywhere_means_localhost_here_and_every_address_for_a_phone():
     on_this_computer, for_a_phone = where_to_open(WITH_A_PORT, ["192.168.1.20", "100.64.0.10"])
-    assert on_this_computer == "http://localhost:23633"
-    assert for_a_phone == ["http://192.168.1.20:23633", "http://100.64.0.10:23633"]
+    assert on_this_computer == "http://localhost:23633/iot-team-13"
+    assert for_a_phone == ["http://192.168.1.20:23633/iot-team-13", "http://100.64.0.10:23633/iot-team-13"]
 
 
 def test_listening_on_one_address_means_localhost_does_not_work():
     one_network = replace(WITH_A_PORT, host="100.64.0.10")
     on_this_computer, for_a_phone = where_to_open(one_network, ["192.168.1.20", "100.64.0.10"])
-    assert on_this_computer == "http://100.64.0.10:23633"
-    assert for_a_phone == ["http://100.64.0.10:23633"]
+    assert on_this_computer == "http://100.64.0.10:23633/iot-team-13"
+    assert for_a_phone == ["http://100.64.0.10:23633/iot-team-13"]
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost"])
 def test_listening_on_this_computer_only_offers_no_address_for_a_phone(host):
     on_this_computer, for_a_phone = where_to_open(replace(WITH_A_PORT, host=host), ["192.168.1.20"])
-    assert on_this_computer == "http://localhost:23633"
+    assert on_this_computer == "http://localhost:23633/iot-team-13"
     assert for_a_phone == []
+
+
+def test_an_app_at_the_top_of_the_address_is_printed_without_a_path():
+    on_this_computer, for_a_phone = where_to_open(replace(WITH_A_PORT, app_path=""), ["192.168.1.20"])
+    assert on_this_computer == "http://localhost:23633"
+    assert for_a_phone == ["http://192.168.1.20:23633"]
